@@ -212,7 +212,12 @@ void TextOut(MaggieBase *lib, char *fmt, ...)
                     } break;
                     case 'd' :
                     {
-                        dstPos += IntToStr(&destBuffer[dstPos], va_arg(vl, int));
+						char intstr[64];
+						int digits = IntToStr(intstr, va_arg(vl, int));
+						for(int j = 0; j < 8 - digits; ++j)
+							destBuffer[dstPos++] = ' ';
+						for(int j = 0; j < digits; ++j)
+							destBuffer[dstPos++] = intstr[j];
                     } break;
 					case 'x' :
                     {
