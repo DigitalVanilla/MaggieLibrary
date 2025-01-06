@@ -7,7 +7,7 @@ SOURCES=windowed.c
 
 ASFLAGS=-m68080 -m68881 -quiet -Fhunk
 
-CFLAGS=-std=c99 -noixemul -Ofast -fomit-frame-pointer -m68080 -Wall -Wno-unused-function -DAMIGA=1 -I ../../include
+CFLAGS=-std=c99 -noixemul -Ofast -fomit-frame-pointer -m68080 -mhard-float -Wall -Wno-unused-function -DAMIGA=1 -I ../../include
 
 LFLAGS=-L. -noixemul
 LDLIBS=-lamiga -lm
