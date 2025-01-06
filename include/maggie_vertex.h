@@ -48,6 +48,14 @@ struct MaggieTransVertex
 
 /*****************************************************************************/
 
+struct MaggieSpriteVertex
+{
+	vec3 pos;
+	ULONG colour;
+};
+
+/*****************************************************************************/
+
 struct SpanPosition
 {
 	ULONG u, v;

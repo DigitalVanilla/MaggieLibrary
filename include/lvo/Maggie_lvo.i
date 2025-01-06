@@ -47,6 +47,8 @@ LIBRARIES_MAGGIE_LVO_I	SET	1
 		XDEF	_LVOmagClearColour
 		XDEF	_LVOmagClearDepth
 		XDEF	_LVOmagScissor
+		XDEF	_LVOmagDrawSprites
+		XDEF	_LVOmagDrawSpritesUP
 
 _LVOmagSetScreenMemory      	EQU	-30
 _LVOmagSetTexture           	EQU	-36
@@ -94,5 +96,7 @@ _LVOmagSetLightColour       	EQU	-282
 _LVOmagClearColour          	EQU	-288
 _LVOmagClearDepth           	EQU	-294
 _LVOmagScissor              	EQU	-300
+_LVOmagDrawSprites          	EQU	-306
+_LVOmagDrawSpritesUP        	EQU	-312
 
 		ENDC

@@ -201,4 +201,12 @@
 	LP4NR(0x12c, magScissor, UWORD, x0, d0, UWORD, y0, d1, UWORD, x1, d2, UWORD, y1, d3, \
 	, MAGGIE_BASE_NAME)
 
+#define magDrawSprites(startVtx, nSprites, spriteSize) \
+	LP3NR(0x132, magDrawSprites, UWORD, startVtx, d0, UWORD, nSprites, d1, float, spriteSize, fp0, \
+	, MAGGIE_BASE_NAME)
+
+#define magDrawSpritesUP(vtx, nSprites, spriteSize) \
+	LP3NR(0x138, magDrawSpritesUP, struct MaggieSpriteVertex *, vtx, a0, UWORD, nSprites, d0, float, spriteSize, fp0, \
+	, MAGGIE_BASE_NAME)
+
 #endif /*  _INLINE_MAGGIE_H  */

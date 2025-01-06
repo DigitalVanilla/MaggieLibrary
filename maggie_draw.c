@@ -6,6 +6,55 @@
 /*****************************************************************************/
 /*****************************************************************************/
 
+static void SetupHW(MaggieBase *lib)
+{
+	UWORD mode = lib->drawMode;
+	UWORD drawMode = 0;
+	if(mode & MAG_DRAWMODE_BILINEAR)
+	{
+		drawMode |=  0x0001;
+	}
+	if(mode & MAG_DRAWMODE_DEPTHBUFFER)
+	{
+		drawMode |= 0x0002;
+	}
+	if((mode & MAG_DRAWMODE_BLEND_MASK) == MAG_DRAWMODE_BLEND_ADD)
+	{
+		drawMode |= 0x0040;
+	}
+	if((mode & MAG_DRAWMODE_BLEND_MASK) == MAG_DRAWMODE_BLEND_MUL)
+	{
+		drawMode |= 0x0080;
+	}
+	UWORD modulo = 4;
+	if(!(mode & MAG_DRAWMODE_32BIT))
+	{
+		drawMode |= 0x0004;
+		modulo = 2;
+	}
+	maggieRegs.mode = drawMode;
+	maggieRegs.modulo = modulo;
+	maggieRegs.lightRGBA = lib->colour;
+
+	APTR txtrData = GetTextureData(lib->textures[lib->txtrIndex]);
+	UWORD txtrSize = GetTexSizeIndex(lib->textures[lib->txtrIndex]);
+
+	maggieRegs.texture = txtrData;
+
+	if((txtrSize != 5) && (mode & MAG_DRAWMODE_MIPMAP))
+	{
+		maggieRegs.texSize = txtrSize | 0x0010;
+	}
+	else
+	{
+		maggieRegs.texSize = txtrSize;
+	}
+}
+
+/*****************************************************************************/
+
+/*****************************************************************************/
+
 #define CLIPPED_OUT		0
 #define CLIPPED_IN		1
 #define CLIPPED_PARTIAL 2
@@ -107,6 +156,48 @@ void NormaliseClippedVertexBuffer(struct MaggieTransVertex *vtx, int nVerts, Mag
 
 /*****************************************************************************/
 
+int my_abs(int v)
+{
+	if(v < 0)
+		return -v;
+	return v;
+}
+
+/*****************************************************************************/
+
+void DrawScreenLine(MaggieBase *lib, int x0, int y0, int x1, int y1)
+{
+	int dx = my_abs(x1 - x0);
+	int dy = my_abs(y1 - y0);
+	int sx = (x0 < x1) ? 1 : -1;
+	int sy = (y0 < y1) ? 1 : -1;
+	int err = dx - dy;
+	int e2;
+	ULONG *screen = (ULONG *)lib->screen;
+	for(;;)
+	{
+		if((x0 > lib->scissor.x0) && (x0 < lib->scissor.x1) && (y0 > lib->scissor.y0) && (y0 < lib->scissor.y1))
+			screen[y0 * lib->xres + x0] = 0xffffff;
+
+		if((x0 == x1) && (y0 == y1))
+			break;
+
+		e2 = 2 * err;
+		if(e2 > -dy)
+		{
+			err -= dy;
+			x0 += sx;
+		}
+		if(e2 < dx)
+		{
+			err += dx;
+			y0 += sy;
+		}
+	}
+}
+
+/*****************************************************************************/
+
 void DrawTriangle(struct MaggieTransVertex *vtx0, struct MaggieTransVertex *vtx1, struct MaggieTransVertex *vtx2, MaggieBase *lib)
 {
 	float area = TriangleArea(&vtx0->pos, &vtx1->pos, &vtx2->pos);
@@ -115,6 +206,14 @@ void DrawTriangle(struct MaggieTransVertex *vtx0, struct MaggieTransVertex *vtx1
 		area = -area;
 	if(area > 0.0f)
 		return;
+
+	if(lib->frameCounter & 1)
+	{
+		DrawScreenLine(lib, vtx0->pos.x, vtx0->pos.y, vtx1->pos.x, vtx1->pos.y);
+		DrawScreenLine(lib, vtx1->pos.x, vtx1->pos.y, vtx2->pos.x, vtx2->pos.y);
+		DrawScreenLine(lib, vtx2->pos.x, vtx2->pos.y, vtx0->pos.x, vtx0->pos.y);
+		return;
+	}
 
 	int miny = vtx0->pos.y;
 	if(miny > vtx1->pos.y)
@@ -152,6 +251,14 @@ void DrawPolygon(struct MaggieTransVertex *vtx, int nVerts, MaggieBase *lib)
 	if(area >= 0.0f)
 		return;
 
+	if(lib->frameCounter & 1)
+	{
+		for(int i = 0; i < nVerts; ++i)
+		{
+			DrawScreenLine(lib, vtx[i].pos.x, vtx[i].pos.y, vtx[(i + 1) % nVerts].pos.x, vtx[(i + 1) % nVerts].pos.y);
+		}
+		return;
+	}
 	int miny = vtx[0].pos.y;
 	int maxy = vtx[0].pos.y;
 	for(int i = 1; i < nVerts; ++i)
@@ -191,6 +298,14 @@ void DrawIndexedPolygon(struct MaggieTransVertex *vtx, UWORD *indx, int nIndx, M
 	if(area >= 0.0f)
 		return;
 
+	if(lib->frameCounter & 1)
+	{
+		for(int i = 0; i < nIndx; ++i)
+		{
+			DrawScreenLine(lib, vtx[indx[i]].pos.x, vtx[indx[i]].pos.y, vtx[indx[(i + 1) % nIndx]].pos.x, vtx[indx[(i + 1) % nIndx]].pos.y);
+		}
+		return;
+	}
 	int miny = vtx[indx[0]].pos.y;
 	int maxy = vtx[indx[0]].pos.y;
 
@@ -217,6 +332,7 @@ void DrawIndexedPolygon(struct MaggieTransVertex *vtx, UWORD *indx, int nIndx, M
 /*****************************************************************************/
 
 static struct MaggieVertex vtxBufferUP[65536];
+static struct MaggieSpriteVertex spriteBufferUP[65536];
 static struct MaggieTransVertex transVtxBufferUP[65536];
 static UBYTE transClipCodesUP[65536];
 static struct MaggieTransVertex clippedPoly[MAG_MAX_POLYSIZE + 8];
@@ -225,6 +341,8 @@ static struct MaggieTransVertex clippedPoly[MAG_MAX_POLYSIZE + 8];
 
 void magDrawTrianglesUP(REG(a0, struct MaggieVertex *vtx), REG(d0, UWORD nVerts), REG(a6, MaggieBase *lib))
 {
+	SetupHW(lib);
+
 	for(int i = 0; i < nVerts; ++i)
 	{
 		vtxBufferUP[i] = vtx[i];
@@ -290,6 +408,8 @@ void magDrawTrianglesUP(REG(a0, struct MaggieVertex *vtx), REG(d0, UWORD nVerts)
 
 void magDrawIndexedTrianglesUP(REG(a0, struct MaggieVertex *vtx), REG(d0, UWORD nVerts), REG(a1, UWORD *indx), REG(d1, UWORD nIndx), REG(a6, MaggieBase *lib))
 {
+	SetupHW(lib);
+
 	for(int i = 0; i < nVerts; ++i)
 	{
 		vtxBufferUP[i] = vtx[i];
@@ -364,6 +484,8 @@ void magDrawIndexedTrianglesUP(REG(a0, struct MaggieVertex *vtx), REG(d0, UWORD 
 
 void magDrawIndexedPolygonsUP(REG(a0, struct MaggieVertex *vtx), REG(d0, UWORD nVerts), REG(a1, UWORD *indx), REG(d1, UWORD nIndx), REG(a6, MaggieBase *lib))
 {
+	SetupHW(lib);
+
 	for(int i = 0; i < nVerts; ++i)
 	{
 		vtxBufferUP[i] = vtx[i];
@@ -478,6 +600,8 @@ void FlushImmediateMode(MaggieBase *lib)
 
 void magDrawTriangles(REG(d0, UWORD startVtx), REG(d1, UWORD nVerts), REG(a6, MaggieBase *lib))
 {
+	SetupHW(lib);
+
 	struct MaggieVertex *vtx = GetVBVertices(lib->vertexBuffers[lib->vBuffer]) + startVtx;
 	struct MaggieTransVertex *transVtx = GetVBTransVertices(lib->vertexBuffers[lib->vBuffer]) + startVtx;
 	UBYTE *clipCodes = GetVBClipCodes(lib->vertexBuffers[lib->vBuffer]) + startVtx;
@@ -539,6 +663,8 @@ void magDrawTriangles(REG(d0, UWORD startVtx), REG(d1, UWORD nVerts), REG(a6, Ma
 
 void magDrawIndexedTriangles(REG(d0, UWORD startVtx), REG(d1, UWORD nVerts), REG(d2, UWORD startIndx), REG(d3, UWORD nIndx), REG(a6, MaggieBase *lib))
 {
+	SetupHW(lib);
+
 	UWORD *indexBuffer = GetIBIndices(lib->indexBuffers[lib->iBuffer]) + startIndx;
 	struct MaggieVertex *vtx = GetVBVertices(lib->vertexBuffers[lib->vBuffer]);
 	struct MaggieTransVertex *transVtx = GetVBTransVertices(lib->vertexBuffers[lib->vBuffer]);
@@ -610,6 +736,8 @@ void magDrawIndexedPolygons(REG(d0, UWORD startVtx), REG(d1, UWORD nVerts), REG(
 #if PROFILE
 	ULONG drawStart = GetClocks();
 #endif
+	SetupHW(lib);
+
 	UWORD *indexBuffer = GetIBIndices(lib->indexBuffers[lib->iBuffer]) + startIndx;
 	struct MaggieVertex *vtx = GetVBVertices(lib->vertexBuffers[lib->vBuffer]);
 	struct MaggieTransVertex *transVtx = GetVBTransVertices(lib->vertexBuffers[lib->vBuffer]);
@@ -705,7 +833,7 @@ void magDrawIndexedPolygons(REG(d0, UWORD startVtx), REG(d1, UWORD nVerts), REG(
 	}
 	DisownBlitter();
 #if PROFILE
-	lib->profile.draw += GetClocks() - drawStart;
+//	lib->profile.draw += GetClocks() - drawStart;
 #endif
 }
 
@@ -713,12 +841,138 @@ void magDrawIndexedPolygons(REG(d0, UWORD startVtx), REG(d1, UWORD nVerts), REG(
 
 void magDrawLinearSpan(REG(a0, struct SpanPosition *start), REG(a1, struct SpanPosition *end), REG(a6, MaggieBase *lib))
 {
+	SetupHW(lib);
 }
 
 /*****************************************************************************/
 
 void magDrawSpan(REG(a0, struct MaggieClippedVertex *start), REG(a1, struct MaggieClippedVertex *end), REG(a6, MaggieBase *lib))
 {
+	SetupHW(lib);
+}
+
+/*****************************************************************************/
+
+void ExpandSpriteBuffer(struct MaggieTransVertex *dest, struct MaggieSpriteVertex *srcVtx, int nSprites, float spriteSize, MaggieBase *lib)
+{
+	for(int i = 0; i < nSprites; ++i)
+	{
+		vec3 p0 = srcVtx[i].pos; p0.x += spriteSize; p0.y += spriteSize;
+		vec3 p1 = srcVtx[i].pos; p1.x += spriteSize; p1.y -= spriteSize;
+		vec3 p2 = srcVtx[i].pos; p2.x -= spriteSize; p2.y -= spriteSize;
+		vec3 p3 = srcVtx[i].pos; p3.x -= spriteSize; p3.y += spriteSize;
+		vec3_tformh(&dest[i * 4 + 0].pos, &lib->perspectiveMatrix, &p0, 1.0f);
+		dest[i * 4 + 0].tex[0].u = 0.0f * 256.0f * 65536.0f;
+		dest[i * 4 + 0].tex[0].v = 0.0f * 256.0f * 65536.0f;
+		dest[i * 4 + 0].tex[0].w = 1.0f;
+		dest[i * 4 + 0].colour = srcVtx[i].colour;
+		vec3_tformh(&dest[i * 4 + 1].pos, &lib->perspectiveMatrix, &p1, 1.0f);
+		dest[i * 4 + 1].tex[0].u = 0.0f * 256.0f * 65536.0f;
+		dest[i * 4 + 1].tex[0].v = 1.0f * 256.0f * 65536.0f;
+		dest[i * 4 + 1].tex[0].w = 1.0f;
+		dest[i * 4 + 1].colour = srcVtx[i].colour;
+		vec3_tformh(&dest[i * 4 + 2].pos, &lib->perspectiveMatrix, &p2, 1.0f);
+		dest[i * 4 + 2].tex[0].u = 1.0f * 256.0f * 65536.0f;
+		dest[i * 4 + 2].tex[0].v = 1.0f * 256.0f * 65536.0f;
+		dest[i * 4 + 2].tex[0].w = 1.0f;
+		dest[i * 4 + 2].colour = srcVtx[i].colour;
+		vec3_tformh(&dest[i * 4 + 3].pos, &lib->perspectiveMatrix, &p3, 1.0f);
+		dest[i * 4 + 3].tex[0].u = 1.0f * 256.0f * 65536.0f;
+		dest[i * 4 + 3].tex[0].v = 0.0f * 256.0f * 65536.0f;
+		dest[i * 4 + 3].tex[0].w = 1.0f;
+		dest[i * 4 + 3].colour = srcVtx[i].colour;
+	}
+}
+
+/*****************************************************************************/
+
+void magDrawSprites(REG(d0, UWORD startVtx), REG(d1, UWORD nSprites), REG(fp0, float spriteSize), REG(a6, MaggieBase *lib))
+{
+	SetupHW(lib);
+
+	struct MaggieVertex *vtx = GetVBVertices(lib->vertexBuffers[lib->vBuffer]);
+	TransformToSpriteBuffer(spriteBufferUP, &vtx[startVtx], nSprites, lib);
+	ExpandSpriteBuffer(transVtxBufferUP, spriteBufferUP, nSprites, spriteSize * 0.5f, lib);
+	int clipRes = ComputeClipCodes(transClipCodesUP, transVtxBufferUP, nSprites * 4);
+
+	if(clipRes == CLIPPED_OUT)
+	{
+		return;
+	}
+	struct GfxBase *GfxBase = lib->gfxBase;
+
+	OwnBlitter();
+
+	if(clipRes == CLIPPED_IN)
+	{
+		NormaliseClippedVertexBuffer(transVtxBufferUP, nSprites * 4, lib);
+		for(int i = 0; i < nSprites; ++i)
+		{
+			DrawPolygon(&transVtxBufferUP[i * 4], 4, lib);
+		}
+	}
+	else
+	{
+		for(int i = 0; i < nSprites; ++i)
+		{
+			clippedPoly[0] = transVtxBufferUP[i * 4 + 0];
+			clippedPoly[1] = transVtxBufferUP[i * 4 + 1];
+			clippedPoly[2] = transVtxBufferUP[i * 4 + 2];
+			clippedPoly[3] = transVtxBufferUP[i * 4 + 3];
+			int nClippedVerts = ClipPolygon(clippedPoly, 4);
+			if(nClippedVerts > 2)
+			{
+				NormaliseClippedVertexBuffer(clippedPoly, nClippedVerts, lib);
+				DrawPolygon(clippedPoly, nClippedVerts, lib);
+			}
+		}
+	}
+	DisownBlitter();
+}
+
+/*****************************************************************************/
+
+void magDrawSpritesUP(REG(a0, struct MaggieSpriteVertex *vtx), REG(d0, UWORD nSprites), REG(fp0, float spriteSize), REG(a6, MaggieBase *lib))
+{
+	SetupHW(lib);
+
+	TransformSpriteBuffer(spriteBufferUP, vtx, nSprites, lib);
+	ExpandSpriteBuffer(transVtxBufferUP, spriteBufferUP, nSprites, spriteSize * 0.5f, lib);
+	int clipRes = ComputeClipCodes(transClipCodesUP, transVtxBufferUP, nSprites * 4);
+
+	if(clipRes == CLIPPED_OUT)
+	{
+		return;
+	}
+	struct GfxBase *GfxBase = lib->gfxBase;
+
+	OwnBlitter();
+
+	if(clipRes == CLIPPED_IN)
+	{
+		NormaliseClippedVertexBuffer(transVtxBufferUP, nSprites * 4, lib);
+		for(int i = 0; i < nSprites; ++i)
+		{
+			DrawPolygon(&transVtxBufferUP[i * 4], 4, lib);
+		}
+	}
+	else
+	{
+		for(int i = 0; i < nSprites; ++i)
+		{
+			clippedPoly[0] = transVtxBufferUP[i * 4 + 0];
+			clippedPoly[1] = transVtxBufferUP[i * 4 + 1];
+			clippedPoly[2] = transVtxBufferUP[i * 4 + 2];
+			clippedPoly[3] = transVtxBufferUP[i * 4 + 3];
+			int nClippedVerts = ClipPolygon(clippedPoly, 4);
+			if(nClippedVerts > 2)
+			{
+				NormaliseClippedVertexBuffer(clippedPoly, nClippedVerts, lib);
+				DrawPolygon(clippedPoly, nClippedVerts, lib);
+			}
+		}
+	}
+	DisownBlitter();
 }
 
 /*****************************************************************************/

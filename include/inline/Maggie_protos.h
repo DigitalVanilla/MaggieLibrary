@@ -143,4 +143,10 @@ void __magClearDepth(__reg("a6") struct Library *, __reg("d0") UWORD depth)="\tj
 void __magScissor(__reg("a6") struct Library *, __reg("d0") UWORD x0, __reg("d1") UWORD y0, __reg("d2") UWORD x1, __reg("d3") UWORD y1)="\tjsr\t-300(a6)";
 #define magScissor(x0, y0, x1, y1) __magScissor(MaggieBase, (x0), (y0), (x1), (y1))
 
+void __magDrawSprites(__reg("a6") struct Library *, __reg("d0") UWORD startVtx, __reg("d1") UWORD nSprites, __reg("fp0") float spriteSize)="\tjsr\t-306(a6)";
+#define magDrawSprites(startVtx, nSprites, spriteSize) __magDrawSprites(MaggieBase, (startVtx), (nSprites), (spriteSize))
+
+void __magDrawSpritesUP(__reg("a6") struct Library *, __reg("a0") struct MaggieSpriteVertex * vtx, __reg("d0") UWORD nSprites, __reg("fp0") float spriteSize)="\tjsr\t-312(a6)";
+#define magDrawSpritesUP(vtx, nSprites, spriteSize) __magDrawSpritesUP(MaggieBase, (vtx), (nSprites), (spriteSize))
+
 #endif /*  _VBCCINLINE_MAGGIE_H  */

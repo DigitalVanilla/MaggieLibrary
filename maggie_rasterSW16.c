@@ -15,7 +15,7 @@ static void DrawSpanZBuffer16(UWORD *destCol, UWORD *zBuffer, int len, ULONG Zz,
 			if(ti > 255)
 				ti = 255;
 			*zBuffer = z;
-			*destCol = col;//ti * 0x010101;
+			*destCol = col;
 		}
 		destCol++;
 		zBuffer++;
@@ -87,6 +87,8 @@ void DrawSpansSW16ZBuffer(int ymin, int ymax, MaggieBase *lib)
 		if(x1 > scissorRight)
 		{
 			runLength -= x1 - scissorRight;
+			if(runLength <= 0)
+				continue;
 		}
 
 		DrawSpanZBuffer16(dstColPtr, dstZPtr, runLength, zPos, iPos, zDDA, iDDA, col);
@@ -157,7 +159,6 @@ void DrawSpansSW16(int ymin, int ymax, MaggieBase *lib)
 			if(runLength <= 0)
 				continue;
 		}
-
 		DrawSpan16(dstColPtr, runLength, iPos, iDDA);
 	}
 }

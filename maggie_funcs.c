@@ -272,36 +272,10 @@ void magBeginScene(REG(a6, MaggieBase *lib))
 	DebugReset();
 	lib->colour = 0x00ffffff;
 #if PROFILE
-	// if(lib->profile.count > 10)
-	// {
-	// 	lib->profile.count = 0;
-	// 	lib->profile.linesmin = ~0;
-	// 	lib->profile.spansmin = ~0;
-	// 	lib->profile.transmin = ~0;
-	// 	lib->profile.clearmin = ~0;
-	// 	lib->profile.framemin = ~0;
-	// 	lib->profile.lightmin = ~0;
-	// 	lib->profile.drawmin = ~0;
-	// 	lib->profile.linesmax = 0;
-	// 	lib->profile.spansmax = 0;
-	// 	lib->profile.transmax = 0;
-	// 	lib->profile.clearmax = 0;
-	// 	lib->profile.framemax = 0;
-	// 	lib->profile.lightmax = 0;
-	// 	lib->profile.drawmax = 0;
-	// }
-	// lib->profile.count++;
-
-	lib->profile.nLinePixels = 0;
-	lib->profile.lines = 0;
-	lib->profile.spans = 0;
-	lib->profile.trans = 0;
-	lib->profile.clear = 0;
-	lib->profile.light = 0;
-	lib->profile.draw = 0;
-	lib->profile.texgen = 0;
+	memset(&lib->profile, 0, sizeof(lib->profile));
 	lib->profile.frame = GetClocks();
 #endif
+	lib->frameCounter = lib->drawMode & 0x8000 ? 1 : 0;
 }
 
 /*****************************************************************************/
@@ -311,49 +285,21 @@ void magEndScene(REG(a6, MaggieBase *lib))
 	struct ExecBase *SysBase = lib->sysBase;
 #if PROFILE
 	lib->profile.frame = GetClocks() - lib->profile.frame;
-	if(lib->profile.framemin > lib->profile.frame)
-		lib->profile.framemin = lib->profile.frame;
-	if(lib->profile.linesmin > lib->profile.lines)
-		lib->profile.linesmin = lib->profile.lines;
-	if(lib->profile.spansmin > lib->profile.spans)
-		lib->profile.spansmin = lib->profile.spans;
-	if(lib->profile.transmin > lib->profile.trans)
-		lib->profile.transmin = lib->profile.trans;
-	if(lib->profile.clearmin > lib->profile.clear)
-		lib->profile.clearmin = lib->profile.clear;
-	if(lib->profile.lightmin > lib->profile.light)
-		lib->profile.lightmin = lib->profile.light;
-	if(lib->profile.drawmin > lib->profile.draw)
-		lib->profile.drawmin = lib->profile.draw;
-	if(lib->profile.texgenmin > lib->profile.texgen)
-		lib->profile.texgenmin = lib->profile.texgen;
-
-	if(lib->profile.framemax < lib->profile.frame)
-		lib->profile.framemax = lib->profile.frame;
-	if(lib->profile.linesmax < lib->profile.lines)
-		lib->profile.linesmax = lib->profile.lines;
-	if(lib->profile.spansmax < lib->profile.spans)
-		lib->profile.spansmax = lib->profile.spans;
-	if(lib->profile.transmax < lib->profile.trans)
-		lib->profile.transmax = lib->profile.trans;
-	if(lib->profile.clearmax < lib->profile.clear)
-		lib->profile.clearmax = lib->profile.clear;
-	if(lib->profile.lightmax < lib->profile.light)
-		lib->profile.lightmax = lib->profile.light;
-	if(lib->profile.drawmax < lib->profile.draw)
-		lib->profile.drawmax = lib->profile.draw;
-	if(lib->profile.texgenmax > lib->profile.texgen)
-		lib->profile.texgenmax = lib->profile.texgen;
-
-	// TextOut(lib, "Frame  : (%d, %d) %d", lib->profile.framemin, lib->profile.framemax, lib->profile.frame);
-	// TextOut(lib, "Lines  : (%d, %d) %d", lib->profile.linesmin, lib->profile.linesmax, lib->profile.lines);
-	// TextOut(lib, "Spans  : (%d, %d) %d", lib->profile.spansmin, lib->profile.spansmax, lib->profile.spans);
-	// TextOut(lib, "Trans  : (%d, %d) %d", lib->profile.transmin, lib->profile.transmax, lib->profile.trans);
-	// TextOut(lib, "Clear  : (%d, %d) %d", lib->profile.clearmin, lib->profile.clearmax, lib->profile.clear);
-	// TextOut(lib, "Light  : (%d, %d) %d", lib->profile.lightmin, lib->profile.lightmax, lib->profile.light);
-	// TextOut(lib, "Draw   : (%d, %d) %d", lib->profile.drawmin, lib->profile.drawmax, lib->profile.draw);
-	// TextOut(lib, "TexGen : (%d, %d) %d", lib->profile.texgenmin, lib->profile.texgenmax, lib->profile.texgen);
-	// TextOut(lib, "Line per pixel %d (%d)", lib->profile.lines / lib->profile.nLinePixels, lib->profile.nLinePixels);
+	if(lib->profile.frame)
+	{
+		TextOut(lib, "Frame  : %d", lib->profile.frame);
+		TextOut(lib, "Lines  : %d - %d%%", lib->profile.lines, lib->profile.lines * 100 / lib->profile.frame);
+		TextOut(lib, "Spans  : %d - %d%%", lib->profile.spans, lib->profile.spans * 100 / lib->profile.frame);
+		TextOut(lib, "Trans  : %d - %d%%", lib->profile.trans, lib->profile.trans * 100 / lib->profile.frame);
+		TextOut(lib, "Clear  : %d - %d%%", lib->profile.clear, lib->profile.clear * 100 / lib->profile.frame);
+		TextOut(lib, "Light  : %d - %d%%", lib->profile.light, lib->profile.light * 100 / lib->profile.frame);
+		TextOut(lib, "Draw   : %d - %d%%", lib->profile.draw, lib->profile.draw * 100 / lib->profile.frame);
+		TextOut(lib, "TexGen : %d - %d%%", lib->profile.texgen, lib->profile.texgen * 100 / lib->profile.frame);
+		if(lib->profile.nLinePixels)
+			TextOut(lib, "Line time per pixel %d (%d)", lib->profile.lines / lib->profile.nLinePixels, lib->profile.nLinePixels);
+		if(lib->profile.nPixels)
+			TextOut(lib, "Span time per pixel %d (%d)", lib->profile.spans / lib->profile.nPixels, lib->profile.nPixels);
+	}
 #endif
 	ReleaseSemaphore(&lib->lock);
 }

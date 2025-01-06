@@ -5,6 +5,7 @@
 
 struct MaggieVertex;
 struct MaggieClippedVertex;
+struct MaggieSpriteVertex;
 struct SpanPosition;
 
 void __magDummy(); // Duff prototype.. Not a function.
@@ -25,7 +26,6 @@ UWORD *magGetDepthBuffer(); // This is the live depth buffer!
 void magSetWorldMatrix(float *matrix);
 void magSetViewMatrix(float *matrix);
 void magSetPerspectiveMatrix(float *matrix);
-void magScissor(UWORD x, UWORD y, UWORD width, UWORD height);
 
 /*****************************************************************************/
 
@@ -52,8 +52,6 @@ void magDrawIndexedPolygons(UWORD firstVtx, UWORD nVtx, UWORD startIndx, UWORD n
 
 void magDrawLinearSpan(struct SpanPosition *start, struct SpanPosition *end);
 void magDrawSpan(struct MaggieClippedVertex *start, struct MaggieClippedVertex *end);
-
-/*****************************************************************************/
 
 /*****************************************************************************/
 // All Buffers/textures are GLOBAL, and must be freed at exit.
@@ -102,8 +100,6 @@ void magColour(ULONG col);
 /*****************************************************************************/
 
 void magClear(UWORD buffers);
-void magClearColour(ULONG colour);
-void magClearDepth(UWORD depth);
 
 /*****************************************************************************/
 
@@ -113,6 +109,20 @@ void magSetLightDirection(UWORD light, float x, float y, float z);
 void magSetLightCone(UWORD light, float phi);
 void magSetLightAttenuation(UWORD light, float attenuation);
 void magSetLightColour(UWORD light, ULONG colour);
+
+/*****************************************************************************/
+
+void magClearColour(ULONG colour);
+void magClearDepth(UWORD depth);
+
+/*****************************************************************************/
+
+void magScissor(UWORD x, UWORD y, UWORD width, UWORD height);
+
+/*****************************************************************************/
+
+void magDrawSprites(UWORD startVtx, UWORD nSprites, float spriteSize);
+void magDrawSpritesUP(struct MaggieSpriteVertex *vtx, UWORD nSprites, float spriteSize);
 
 /*****************************************************************************/
 

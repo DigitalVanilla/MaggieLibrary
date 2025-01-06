@@ -31,39 +31,39 @@ void DrawLine(magEdgePos * restrict edge, int tex, const struct MaggieTransVerte
 #else
 	float xLen = v1->pos.x - v0->pos.x;
 	float zLen = v1->pos.z - v0->pos.z;
+	int iLen = ((int)v1->colour - (int)v0->colour);
 	float wLen = v1->pos.w - v0->pos.w;
 	float uLen = v1->tex[tex].u - v0->tex[tex].u;
 	float vLen = v1->tex[tex].v - v0->tex[tex].v;
-	int iLen = ((int)v1->colour - (int)v0->colour);
 
 	float xDDA = xLen * ooYLen;
 	float zDDA = zLen * ooYLen;
+	float iDDA = iLen * ooYLen;
 	float wDDA = wLen * ooYLen;
 	float uDDA = uLen * ooYLen;
 	float vDDA = vLen * ooYLen;
-	float iDDA = iLen * ooYLen;
 
 	float xVal = v0->pos.x + preStep * xDDA;
 	float zow = v0->pos.z + preStep * zDDA;
+	float iow = v0->colour + preStep * iDDA;
 	float oow = v0->pos.w + preStep * wDDA;
 	float uow = v0->tex[tex].u + preStep * uDDA;
 	float vow = v0->tex[tex].v + preStep * vDDA;
-	float iow = (int)v0->colour + preStep * iDDA;
 
 	for(int i = 0; i < lineLen; ++i)
 	{
 		edge[i].xPosLeft = xVal;
 		edge[i].zowLeft = zow;
+		edge[i].iowLeft = iow;
 		edge[i].oowLeft = oow;
 		edge[i].uowLeft = uow;
 		edge[i].vowLeft = vow;
-		edge[i].iowLeft = iow;
 		xVal += xDDA;
+		iow += iDDA;
 		zow += zDDA;
 		oow += wDDA;
 		uow += uDDA;
 		vow += vDDA;
-		iow += iDDA;
 	}
 #endif
 }

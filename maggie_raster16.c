@@ -4,74 +4,72 @@
 
 /*****************************************************************************/
 
-static void DrawHardwareSpanZBuffered(APTR dest, APTR zDest, int len, ULONG ZZzz, ULONG UUuu, ULONG VVvv, UWORD Ii, ULONG dZZzz, ULONG dUUuu, ULONG dVVvv, UWORD dIi)
+static int FToI(float f)
 {
-	maggieRegs.depthDest = zDest;
-	maggieRegs.depthStart = ZZzz;
-	maggieRegs.depthDelta = dZZzz;
-	maggieRegs.pixDest = dest;
-	maggieRegs.uCoord = UUuu;
-	maggieRegs.vCoord = VVvv;
-	maggieRegs.light = Ii;
+#if 0
+	int i;
+
+	__asm(
+		"fmove.l %1,%0\n"
+		: "=d" (i)
+		: "f" (f)
+		: "cc"
+	);
+	return i;
+#else
+	return (int)f;
+#endif
+}
+
+/*****************************************************************************/
+
+static unsigned int FToU(float f)
+{
+#if 0
+	unsigned int i;
+
+	__asm(
+		"fintrz.x %1,%1\n"
+		"\tfmove.l %1,%0\n"
+		: "=d" (i)
+		: "f" (f)
+		: "cc"
+	);
+	return i;
+#else
+	return (unsigned int)f;
+#endif
+}
+
+/*****************************************************************************/
+
+static void my_WaitBlit()
+{
+	volatile UWORD *dmaconr = (UWORD *)0xdff002;
+	while(*dmaconr & 0x4000) { }
+}
+
+/*****************************************************************************/
+
+static void DrawHardwareSpan(int len, int dUUuu, int dVVvv)
+{
 	maggieRegs.uDelta = dUUuu;
 	maggieRegs.vDelta = dVVvv;
-	maggieRegs.lightDelta = dIi;
 	maggieRegs.startLength = len;
-}
-
-/*****************************************************************************/
-
-static void DrawHardwareSpan(APTR dest, int len, ULONG UUuu, ULONG VVvv, UWORD Ii, ULONG dUUuu, ULONG dVVvv, UWORD dIi)
-{
-	maggieRegs.pixDest = dest;
-	maggieRegs.uCoord = UUuu;
-	maggieRegs.vCoord = VVvv;
-	maggieRegs.light = Ii;
-	maggieRegs.uDelta = dUUuu;
-	maggieRegs.vDelta = dVVvv;
-	maggieRegs.lightDelta = dIi;
-	maggieRegs.startLength = len;
-}
-
-/*****************************************************************************/
-
-static void SetTexture(APTR txtrData, UWORD size)
-{
-	maggieRegs.texSize = size;
-	maggieRegs.texture = txtrData;
-}
-
-/*****************************************************************************/
-
-static void SetupHW(MaggieBase *lib)
-{
-	UWORD mode = lib->drawMode;
-	UWORD drawMode = 0x0004;
-	if(mode & MAG_DRAWMODE_BILINEAR)
-	{
-		drawMode |=  0x0001;
-	}
-	if(mode & MAG_DRAWMODE_DEPTHBUFFER)
-	{
-		drawMode |= 0x0002;
-	}
-	UWORD modulo = 2;
-	maggieRegs.mode = drawMode;
-	maggieRegs.modulo = modulo;
-	maggieRegs.lightRGBA = lib->colour;
 }
 
 /*****************************************************************************/
 
 void DrawSpansHW16ZBuffer(int ymin, int ymax, MaggieBase *lib)
 {
-	APTR txtrData = GetTextureData(lib->textures[lib->txtrIndex]);
-	UWORD txtrSize = GetTexSizeIndex(lib->textures[lib->txtrIndex]);
-	SetupHW(lib);
-	SetTexture(txtrData, txtrSize);
-
-	magEdgePos *edges = &lib->magEdge[ymin];
 	int ylen = ymax - ymin;
+
+	if(ylen <= 0)
+	{
+		return;
+	}
+	magEdgePos *edges = &lib->magEdge[ymin];
+
 	int modulo = lib->xres;
 	UWORD *pixels = ((UWORD *)lib->screen) + ymin * lib->xres;
 	UWORD *zbuffer = lib->depthBuffer + ymin * lib->xres;
@@ -85,119 +83,103 @@ void DrawSpansHW16ZBuffer(int ymin, int ymax, MaggieBase *lib)
 		int x1 = edges[i].xPosRight;
 
 		UWORD *dstColPtr = pixels + x0;
-		UWORD *dstZPtr =  &zbuffer[x0];
+		UWORD *dstZPtr = zbuffer + x0;
 
 		pixels += modulo;
 		zbuffer += modulo;
 
-		if(x0 >= x1)
+		int len = x1 - x0;
+
+		if(len <= 0)
 			continue;
 
-		int len = x1 - x0;
-		float xFracStart = edges[i].xPosLeft - x0;
-		float preStep = 1.0f - xFracStart;
-
-		float ooXLength = 1.0f / (edges[i].xPosRight - edges[i].xPosLeft);
-
-		float zDDA = (edges[i].zowRight - edges[i].zowLeft) * ooXLength;
-		float wDDA = (edges[i].oowRight - edges[i].oowLeft) * ooXLength;
-		float uDDA = (edges[i].uowRight - edges[i].uowLeft) * ooXLength;
-		float vDDA = (edges[i].vowRight - edges[i].vowLeft) * ooXLength;
-		float iDDA = (edges[i].iowRight - edges[i].iowLeft) * ooXLength;
-
-		float zPos = edges[i].zowLeft + preStep * zDDA;
-		float wPos = edges[i].oowLeft + preStep * wDDA;
-		float uPos = edges[i].uowLeft + preStep * uDDA;
-		float vPos = edges[i].vowLeft + preStep * vDDA;
-		float iPos = edges[i].iowLeft + preStep * iDDA;
-
+		int xScissorDiff = 0;
 		if(x0 < scissorLeft)
 		{
-			int diff = scissorLeft - x0;
-			zPos += zDDA * diff;
-			wPos += wDDA * diff;
-			uPos += uDDA * diff;
-			vPos += vDDA * diff;
-			iPos += iDDA * diff;
-			dstColPtr += diff;
-			dstZPtr += diff;
-			len -= diff;
-			if(len <= 0)
-				continue;
+			xScissorDiff = scissorLeft - x0;
+			len -= xScissorDiff;
 		}
 		if(x1 > scissorRight)
 		{
 			len -= x1 - scissorRight;
 		}
-
-		if(len > PIXEL_RUN)
+		if(len <= 0)
 		{
-			float zDDAFullRun = zDDA * PIXEL_RUN;
+			continue;
+		}
+		maggieRegs.pixDest = dstColPtr + xScissorDiff;
+		maggieRegs.depthDest = dstZPtr + xScissorDiff;
+
+		float xFracStart = edges[i].xPosLeft - x0;
+		float preStep = 1.0f - xFracStart + xScissorDiff;
+		float ooXLength = 1.0f / (edges[i].xPosRight - edges[i].xPosLeft);
+
+		float zDDA = (edges[i].zowRight - edges[i].zowLeft) * ooXLength;
+		maggieRegs.depthDelta = zDDA;
+		maggieRegs.depthStart = edges[i].zowLeft + preStep * zDDA;
+		float iDDA = (edges[i].iowRight - edges[i].iowLeft) * ooXLength;
+		maggieRegs.lightDelta = iDDA;
+		maggieRegs.light = edges[i].iowLeft + preStep * iDDA;
+		float wDDA = (edges[i].oowRight - edges[i].oowLeft) * ooXLength;
+		float wPos = edges[i].oowLeft + preStep * wDDA;
+		float uDDA = (edges[i].uowRight - edges[i].uowLeft) * ooXLength;
+		float uPos = edges[i].uowLeft + preStep * uDDA;
+		float vDDA = (edges[i].vowRight - edges[i].vowLeft) * ooXLength;
+		float vPos = edges[i].vowLeft + preStep * vDDA;
+
+		float w = 1.0 / wPos;
+		LONG uStart = (uPos * w);
+		LONG vStart = (vPos * w);
+
+		maggieRegs.uCoord = uStart;
+		maggieRegs.vCoord = vStart;
+
+		int consecutiveRunFlag = 0;
+
+		if(len >= PIXEL_RUN)
+		{
 			float wDDAFullRun = wDDA * PIXEL_RUN;
 			float uDDAFullRun = uDDA * PIXEL_RUN;
 			float vDDAFullRun = vDDA * PIXEL_RUN;
-			float iDDAFullRun = iDDA * PIXEL_RUN;
 
-			float w = 1.0 / wPos;
-			LONG uStart = uPos * w;
-			LONG vStart = vPos * w;
-			float iStart = iPos;
 			float ooLen = 1.0f / PIXEL_RUN;
 
 			while(len >= PIXEL_RUN)
 			{
 				wPos += wDDAFullRun;
+				w = 1.0 / wPos;
 				uPos += uDDAFullRun;
 				vPos += vDDAFullRun;
-				iPos += iDDAFullRun;
-
-				w = 1.0 / wPos;
-
-				float iEnd = iPos;
 
 				LONG uEnd = (uPos * w);
 				LONG vEnd = (vPos * w);
 
-				LONG dUUuu = (LONG)((uEnd - uStart) * ooLen);
-				LONG dVVvv = (LONG)((vEnd - vStart) * ooLen);
-				LONG dIi = (LONG)((iEnd - iStart) * ooLen);
+				LONG dUUuu = (LONG)((uEnd - uStart) >> PIXEL_RUNSHIFT);
+				LONG dVVvv = (LONG)((vEnd - vStart) >> PIXEL_RUNSHIFT);
+				DrawHardwareSpan(consecutiveRunFlag | PIXEL_RUN, dUUuu, dVVvv);
 
-				DrawHardwareSpanZBuffered(dstColPtr, dstZPtr, PIXEL_RUN, (ULONG)zPos, uStart, vStart, (LONG)iStart, (LONG)zDDA, dUUuu, dVVvv, dIi);
-
-				dstColPtr += PIXEL_RUN;
-				dstZPtr += PIXEL_RUN;
-				zPos += zDDAFullRun;
 				uStart = uEnd;
 				vStart = vEnd;
-				iStart = iEnd;
 				len -= PIXEL_RUN;
+				consecutiveRunFlag |= 0x8000;
 			}
 		}
 		if(len > 0)
 		{
-			float w = 1.0 / wPos;
-			LONG uStart = uPos * w;
-			LONG vStart = vPos * w;
-			float iStart = iPos;
 			float ooLen = 1.0f / len;
 
 			wPos += wDDA * len;
-			uPos += uDDA * len;
-			vPos += vDDA * len;
-			iPos += iDDA * len;
-
 			w = 1.0 / wPos;
+			uPos += FToI(uDDA * len);
+			vPos += FToI(vDDA * len);
 
-			float iEnd = iPos;
+			LONG uEnd = FToI(uPos * w);
+			LONG vEnd = FToI(vPos * w);
 
-			LONG uEnd = uPos * w;
-			LONG vEnd = vPos * w;
+			LONG dUUuu = FToI((uEnd - uStart) * ooLen);
+			LONG dVVvv = FToI((vEnd - vStart) * ooLen);
 
-			LONG dUUuu = (LONG)((uEnd - uStart) * ooLen);
-			LONG dVVvv = (LONG)((vEnd - vStart) * ooLen);
-			LONG dIi = (LONG)((iEnd - iStart) * ooLen);
-
-			DrawHardwareSpanZBuffered(dstColPtr, dstZPtr, len, (ULONG)zPos, uStart, vStart, (LONG)iStart, (LONG)zDDA, dUUuu, dVVvv, dIi);
+			DrawHardwareSpan(consecutiveRunFlag | len, dUUuu, dVVvv);
 		}
 	}
 }
@@ -206,11 +188,6 @@ void DrawSpansHW16ZBuffer(int ymin, int ymax, MaggieBase *lib)
 
 void DrawSpansHW16(int ymin, int ymax, MaggieBase *lib)
 {
-	APTR txtrData = GetTextureData(lib->textures[lib->txtrIndex]);
-	UWORD txtrSize = GetTexSizeIndex(lib->textures[lib->txtrIndex]);
-	SetTexture(txtrData, txtrSize);
-	SetupHW(lib);
-
 	magEdgePos *edges = &lib->magEdge[ymin];
 	int ylen = ymax - ymin;
 	int modulo = lib->xres;
@@ -228,107 +205,101 @@ void DrawSpansHW16(int ymin, int ymax, MaggieBase *lib)
 
 		pixels += modulo;
 
-		if(x0 >= x1)
+		int len = x1 - x0;
+
+		if(len <= 0)
 			continue;
 
-		int len = x1 - x0;
-		float xFracStart = edges[i].xPosLeft - x0;
-		float preStep = 1.0f - xFracStart;
-
-		float ooXLength = 1.0f / (edges[i].xPosRight - edges[i].xPosLeft);
-
-		float wDDA = (edges[i].oowRight - edges[i].oowLeft) * ooXLength;
-		float uDDA = (edges[i].uowRight - edges[i].uowLeft) * ooXLength;
-		float vDDA = (edges[i].vowRight - edges[i].vowLeft) * ooXLength;
-		float iDDA = (edges[i].iowRight - edges[i].iowLeft) * ooXLength;
-
-		float wPos = edges[i].oowLeft + preStep * wDDA;
-		float uPos = edges[i].uowLeft + preStep * uDDA;
-		float vPos = edges[i].vowLeft + preStep * vDDA;
-		float iPos = edges[i].iowLeft + preStep * iDDA;
-
+		int xScissorDiff = 0;
 		if(x0 < scissorLeft)
 		{
-			int diff = scissorLeft - x0;
-			wPos += wDDA * diff;
-			uPos += uDDA * diff;
-			vPos += vDDA * diff;
-			iPos += iDDA * diff;
-			dstColPtr += diff;
-			len -= diff;
-			if(len <= 0)
-				continue;
+			xScissorDiff = scissorLeft - x0;
+			len -= xScissorDiff;
 		}
 		if(x1 > scissorRight)
 		{
 			len -= x1 - scissorRight;
 		}
+		if(len <= 0)
+		{
+			continue;
+		}
+
+		maggieRegs.pixDest = dstColPtr + xScissorDiff;
+
+		float xFracStart = edges[i].xPosLeft - x0;
+		float preStep = 1.0f - xFracStart + xScissorDiff;
+		float ooXLength = 1.0f / (edges[i].xPosRight - edges[i].xPosLeft);
+
+		float iDDA = (edges[i].iowRight - edges[i].iowLeft) * ooXLength;
+		maggieRegs.lightDelta = iDDA;
+		maggieRegs.light = edges[i].iowLeft + preStep * iDDA;
+
+		float wDDA = (edges[i].oowRight - edges[i].oowLeft) * ooXLength;
+		float wPos = edges[i].oowLeft + preStep * wDDA;
+		float uDDA = (edges[i].uowRight - edges[i].uowLeft) * ooXLength;
+		float uPos = edges[i].uowLeft + preStep * uDDA;
+		float vDDA = (edges[i].vowRight - edges[i].vowLeft) * ooXLength;
+		float vPos = edges[i].vowLeft + preStep * vDDA;
+
+		float w = 1.0 / wPos;
+		LONG uStart = FToI(uPos * w);
+		LONG vStart = FToI(vPos * w);
+
+		maggieRegs.uCoord = uStart;
+		maggieRegs.vCoord = vStart;
+
+		int consecutiveRunFlag = 0;
 
 		if(len > PIXEL_RUN)
 		{
 			float wDDAFullRun = wDDA * PIXEL_RUN;
-			float uDDAFullRun = uDDA * PIXEL_RUN;
-			float vDDAFullRun = vDDA * PIXEL_RUN;
-			float iDDAFullRun = iDDA * PIXEL_RUN;
+			LONG uDDAFullRun = uDDA * PIXEL_RUN;
+			LONG vDDAFullRun = vDDA * PIXEL_RUN;
 
-			float w = 1.0 / wPos;
-			LONG uStart = uPos * w;
-			LONG vStart = vPos * w;
-			float iStart = iPos;
 			float ooLen = 1.0f / PIXEL_RUN;
 
 			while(len >= PIXEL_RUN)
 			{
 				wPos += wDDAFullRun;
+				w = 1.0 / wPos;
 				uPos += uDDAFullRun;
 				vPos += vDDAFullRun;
-				iPos += iDDAFullRun;
 
-				w = 1.0 / wPos;
+				LONG uEnd = FToI(uPos * w);
+				LONG vEnd = FToI(vPos * w);
 
-				float iEnd = iPos;
+				LONG dUUuu = (uEnd - uStart) >> PIXEL_RUNSHIFT;
+				LONG dVVvv = (vEnd - vStart) >> PIXEL_RUNSHIFT;
 
-				LONG uEnd = uPos * w;
-				LONG vEnd = vPos * w;
+				DrawHardwareSpan(consecutiveRunFlag | PIXEL_RUN, dUUuu, dVVvv);
 
-				LONG dUUuu = (LONG)((uEnd - uStart) * ooLen);
-				LONG dVVvv = (LONG)((vEnd - vStart) * ooLen);
-				LONG dIi = (LONG)((iEnd - iStart) * ooLen);
-
-				DrawHardwareSpan(dstColPtr, PIXEL_RUN, uStart, vStart, (LONG)iStart, dUUuu, dVVvv, dIi);
-
-				dstColPtr += PIXEL_RUN;
 				uStart = uEnd;
 				vStart = vEnd;
-				iStart = iEnd;
 				len -= PIXEL_RUN;
+				consecutiveRunFlag |= 0x8000;
 			}
 		}
 		if(len > 0)
 		{
 			float w = 1.0 / wPos;
-			LONG uStart = uPos * w;
-			LONG vStart = vPos * w;
-			float iStart = iPos;
+			wPos += wDDA * len;
 			float ooLen = 1.0f / len;
 
-			wPos += wDDA * len;
-			uPos += uDDA * len;
-			vPos += vDDA * len;
-			iPos += iDDA * len;
+			uPos += FToI(uDDA * len);
+			vPos += FToI(vDDA * len);
 
 			w = 1.0 / wPos;
 
-			float iEnd = iPos;
-
-			LONG uEnd = uPos * w;
-			LONG vEnd = vPos * w;
+			LONG uEnd = FToI(uPos * w);
+			LONG vEnd = FToI(vPos * w);
 
 			LONG dUUuu = (LONG)((uEnd - uStart) * ooLen);
 			LONG dVVvv = (LONG)((vEnd - vStart) * ooLen);
-			LONG dIi = (LONG)((iEnd - iStart) * ooLen);
 
-			DrawHardwareSpan(dstColPtr, len, uStart, vStart, (LONG)iStart, dUUuu, dVVvv, dIi);
+			DrawHardwareSpan(consecutiveRunFlag | len, dUUuu, dVVvv);
 		}
 	}
 }
+
+/*****************************************************************************/

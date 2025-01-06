@@ -137,11 +137,14 @@ static APTR functionTable[] =
 	magClearColour,
 	magClearDepth,
 	magScissor,
+	magDrawSprites,
+	magDrawSpritesUP,
 	(APTR)-1
 };
 
 static const char libName[] = "maggie.library";
-static const char libId[] = "maggie 1.20 (20.1.2023)";
+static const char libId[] = "maggie 1.30 (" __DATE__ ")";
+static const char libVersion[] = "\0$VER: maggie 1.30 (" __DATE__ ")";
 
 static APTR maggieInit(int segList __asm("a0"), MaggieBase *lib __asm("d0"), struct ExecBase *sysBase __asm("a6"))
 {
@@ -199,22 +202,6 @@ static APTR maggieInit(int segList __asm("a0"), MaggieBase *lib __asm("d0"), str
 
 	lib->depthBuffer = AllocMem(MAGGIE_MAX_XRES * MAGGIE_MAX_YRES * sizeof(UWORD), MEMF_ANY | MEMF_CLEAR);
 
-#if PROFILE
-	lib->profile.linesmin = ~0;
-	lib->profile.spansmin = ~0;
-	lib->profile.transmin = ~0;
-	lib->profile.clearmin = ~0;
-	lib->profile.framemin = ~0;
-	lib->profile.lightmin = ~0;
-	lib->profile.drawmin = ~0;
-	lib->profile.linesmax = 0;
-	lib->profile.spansmax = 0;
-	lib->profile.transmax = 0;
-	lib->profile.clearmax = 0;
-	lib->profile.framemax = 0;
-	lib->profile.lightmax = 0;
-	lib->profile.drawmax = 0;
-#endif
 	return lib;
 }
 
@@ -232,7 +219,7 @@ const struct Resident romTag =
 	(APTR)&romTag,
 	(APTR)&romTag + 1,
 	RTF_AUTOINIT,
-	2,
+	3,
 	NT_LIBRARY,
 	0,
 	(APTR)libName,

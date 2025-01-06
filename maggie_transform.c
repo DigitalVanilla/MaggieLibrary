@@ -7,7 +7,7 @@
 /*****************************************************************************/
 /*****************************************************************************/
 
-void TexGenBuffer(struct MaggieTransVertex *dstVtx, struct MaggieVertex *vtx, UWORD nVerts, MaggieBase *lib)
+void TexGenBuffer(struct MaggieTransVertex * restrict dstVtx, struct MaggieVertex * restrict vtx, UWORD nVerts, MaggieBase *lib)
 {
 #if PROFILE
 	ULONG texGenStart = GetClocks();
@@ -56,28 +56,27 @@ void TexGenBuffer(struct MaggieTransVertex *dstVtx, struct MaggieVertex *vtx, UW
 		} break;
 		case MAG_DRAWMODE_TEXGEN_REFLECT :
 		{
-			mat4 iWorld;
-			mat4_inverseLight(&iWorld, &lib->modelView);
-			vec3 camPos = { iWorld.m[3][0], iWorld.m[3][1], iWorld.m[3][2] };
+			// mat4 iWorld;
+			vec3 viewNormal, viewPos;
+			// vec3 camPos = { lib->modelView.m[3][0], lib->modelView.m[3][1], lib->modelView.m[3][2] };
 			for(UWORD i = 0; i < nVerts; ++i)
 			{
-				vec3 viewVec;
-				vec3 viewDir;
 				vec3 reflected;
 				vec3 viewReflected;
 				vec3 normScale;
-				vec3_sub(&viewVec, &vtx[i].pos, &camPos);
-				vec3_normaliseApprox(&viewDir, &viewVec);
-				float VdotN = vec3_dot(&viewDir, &vtx[i].normal);
-				vec3_scale(&normScale, &vtx[i].normal, VdotN * 2.0f);
-				vec3_sub(&reflected, &normScale, &viewDir);
+				vec3_tform(&viewNormal, &lib->modelView, &vtx[i].normal, 0.0f);
+				vec3_tform(&viewPos, &lib->modelView, &vtx[i].pos, 1.0f);
 
-				vec3_tform(&viewReflected, &lib->modelView, &reflected, 0.0f); // This is nonsense..
+				float VdotN = vec3_dot(&viewPos, &viewNormal);
+				vec3_scale(&normScale, &viewNormal, VdotN * 2.0f);
+				vec3_add(&reflected, &viewPos, &normScale);
+
+				vec3_normalise(&viewReflected, &reflected);
 
 				for(UWORD j = 0; j < MAGGIE_MAX_TEXCOORDS; ++j)
 				{
-					dstVtx[i].tex[j].u = (reflected.x * 0.5f + 0.5f) * 256.0f * 65536.0f;
-					dstVtx[i].tex[j].v = (reflected.y * 0.5f + 0.5f) * 256.0f * 65536.0f;
+					dstVtx[i].tex[j].u = (viewReflected.x * 0.5f + 0.5f) * 256.0f * 65536.0f;
+					dstVtx[i].tex[j].v = (viewReflected.y * 0.5f + 0.5f) * 256.0f * 65536.0f;
 					dstVtx[i].tex[j].w = 1.0f;
 				}
 			}
@@ -95,17 +94,24 @@ void TransformH(vec4 *dst __asm("a0"), vec3 *src __asm("a1"));
 
 /*****************************************************************************/
 
-void TransformVertexBuffer(struct MaggieTransVertex *dstVtx, struct MaggieVertex *vtx, UWORD nVerts, MaggieBase *lib)
+static void updateMatrices(MaggieBase *lib)
 {
-#if PROFILE
-	ULONG transStart = GetClocks();
-#endif
 	if(lib->dirtyMatrix)
 	{
 		lib->dirtyMatrix = 0;
 		mat4_mul(&lib->modelView, &lib->viewMatrix, &lib->worldMatrix);
 		mat4_mul(&lib->modelViewProj, &lib->perspectiveMatrix, &lib->modelView);
 	}
+}
+
+/*****************************************************************************/
+
+void TransformVertexBuffer(struct MaggieTransVertex * restrict dstVtx, struct MaggieVertex * restrict vtx, UWORD nVerts, MaggieBase *lib)
+{
+#if PROFILE
+	ULONG transStart = GetClocks();
+#endif
+	updateMatrices(lib);
 	for(UWORD i = 0; i < nVerts; ++i)
 	{
 		vec3_tformh(&dstVtx[i].pos, &lib->modelViewProj, &vtx[i].pos, 1.0f);
@@ -118,7 +124,43 @@ void TransformVertexBuffer(struct MaggieTransVertex *dstVtx, struct MaggieVertex
 
 /*****************************************************************************/
 
-void PrepareVertexBuffer(struct MaggieTransVertex *transDst, struct MaggieVertex *vtx, UWORD nVerts)
+void TransformSpriteBuffer(struct MaggieSpriteVertex * restrict dstVtx, struct MaggieSpriteVertex * restrict vtx, UWORD nVerts, MaggieBase *lib)
+{
+#if PROFILE
+	ULONG transStart = GetClocks();
+#endif
+	updateMatrices(lib);
+	for(UWORD i = 0; i < nVerts; ++i)
+	{
+		vec3_tform(&dstVtx[i].pos, &lib->modelView, &vtx[i].pos, 1.0f);
+		dstVtx[i].colour = vtx[i].colour;
+	}
+#if PROFILE
+	lib->profile.trans += GetClocks() - transStart;
+#endif
+}
+
+/*****************************************************************************/
+
+void TransformToSpriteBuffer(struct MaggieSpriteVertex * restrict dstVtx, struct MaggieVertex * restrict vtx, UWORD nVerts, MaggieBase *lib)
+{
+#if PROFILE
+	ULONG transStart = GetClocks();
+#endif
+	updateMatrices(lib);
+	for(UWORD i = 0; i < nVerts; ++i)
+	{
+		vec3_tform(&dstVtx[i].pos, &lib->modelView, &vtx[i].pos, 1.0f);
+		dstVtx[i].colour = vtx[i].colour;
+	}
+#if PROFILE
+	lib->profile.trans += GetClocks() - transStart;
+#endif
+}
+
+/*****************************************************************************/
+
+void PrepareVertexBuffer(struct MaggieTransVertex * restrict transDst, struct MaggieVertex * restrict vtx, UWORD nVerts)
 {
 	for(UWORD i = 0; i < nVerts; ++i)
 	{

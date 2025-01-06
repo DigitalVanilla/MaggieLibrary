@@ -43,44 +43,43 @@ void DrawSpansSW32ZBuffer(int ymin, int ymax, MaggieBase *lib)
 		int x1 = edges[i].xPosRight;
 
 		ULONG *dstColPtr = pixels + x0;
-		UWORD *dstZPtr =  &zbuffer[x0];
+		UWORD *dstZPtr = zbuffer + x0;
 
 		pixels += modulo;
 		zbuffer += modulo;
 
-		if(x0 >= x1)
+		int len = x1 - x0;
+
+		if(len <= 0)
 			continue;
 
-		int runLength = x1 - x0;
-		float xFracStart = edges[i].xPosLeft - x0;
-		float preStep = 1.0f - xFracStart;
-
-		float ooXLength = 1.0f / (edges[i].xPosRight - edges[i].xPosLeft);
-
-		float zDDA = (edges[i].zowRight - edges[i].zowLeft) * ooXLength;
-		float iDDA = (edges[i].iowRight - edges[i].iowLeft) * ooXLength;
-
-		ULONG zPos = edges[i].zowLeft + preStep * zDDA;
-		LONG iPos = edges[i].iowLeft + preStep * iDDA;
-
+		int xScissorDiff = 0;
 		if(x0 < scissorLeft)
 		{
-			int diff = scissorLeft - x0;
-			iPos += iDDA * diff;
-			zPos += zDDA * diff;
-			dstColPtr += diff;
-			dstZPtr += diff;
-			runLength -= diff;
-
-			if(runLength <= 0)
-				continue;
+			xScissorDiff = scissorLeft - x0;
+			len -= xScissorDiff;
 		}
 		if(x1 > scissorRight)
 		{
-			runLength -= x1 - scissorRight;
+			len -= x1 - scissorRight;
 		}
+		if(len <= 0)
+		{
+			continue;
+		}
+		maggieRegs.pixDest = dstColPtr + xScissorDiff;
+		maggieRegs.depthDest = dstZPtr + xScissorDiff;
 
-		DrawSpanZBuffer32(dstColPtr, dstZPtr, runLength, zPos, iPos, zDDA, iDDA);
+		float xFracStart = edges[i].xPosLeft - x0;
+		float preStep = 1.0f - xFracStart + xScissorDiff;
+		float ooXLength = 1.0f / (edges[i].xPosRight - edges[i].xPosLeft);
+
+		LONG zDDA = (edges[i].zowRight - edges[i].zowLeft) * ooXLength;
+		ULONG zPos = edges[i].zowLeft + preStep * zDDA;
+		LONG iDDA = (edges[i].iowRight - edges[i].iowLeft) * ooXLength;
+		LONG iPos =  edges[i].iowLeft + preStep * iDDA;
+
+		DrawSpanZBuffer32(dstColPtr, dstZPtr, len, zPos, iPos, zDDA, iDDA);
 	}
 }
 
@@ -125,22 +124,38 @@ void DrawSpansSW32(int ymin, int ymax, MaggieBase *lib)
 		int x0 = edges[i].xPosLeft;
 		int x1 = edges[i].xPosRight;
 
-		if(x0 >= x1)
-			continue;
-
 		ULONG *dstColPtr = pixels + x0;
+
 		pixels += modulo;
 
-		int runLength = x1 - x0;
+		int len = x1 - x0;
+
+		if(len <= 0)
+			continue;
+
+		int xScissorDiff = 0;
+		if(x0 < scissorLeft)
+		{
+			xScissorDiff = scissorLeft - x0;
+			len -= xScissorDiff;
+		}
+		if(x1 > scissorRight)
+		{
+			len -= x1 - scissorRight;
+		}
+		if(len <= 0)
+		{
+			continue;
+		}
+		maggieRegs.pixDest = dstColPtr + xScissorDiff;
+
 		float xFracStart = edges[i].xPosLeft - x0;
-		float preStep = 1.0f - xFracStart;
-
+		float preStep = 1.0f - xFracStart + xScissorDiff;
 		float ooXLength = 1.0f / (edges[i].xPosRight - edges[i].xPosLeft);
-		float iDDA = (edges[i].iowRight - edges[i].iowLeft) * ooXLength;
+		LONG iDDA = (edges[i].iowRight - edges[i].iowLeft) * ooXLength;
+		LONG iPos =  edges[i].iowLeft + preStep * iDDA;
 
-		LONG iPos = edges[i].iowLeft + preStep * iDDA;
-
-		DrawSpan32(dstColPtr, runLength, iPos, iDDA);
+		DrawSpan32(dstColPtr, len, iPos, iDDA);
 	}
 }
 
