@@ -76,12 +76,12 @@ struct MaggieVertex
 {
 	vec3 pos;
 	vec3 normal;
-	struct MaggieTexCoord tex[MAGGIE_MAX_TEXCOORDS];
+	struct MaggieTexCoord tex;
 	ULONG colour;
 };
 ```
 
-MAGGIE_MAX_TEXCOORDS is defined to be 1 at this point. It may change in the future if someone asks to use more than one texture in the draw..
+There is only 1 texcoord at this point. It may change in the future if someone asks to use more than one texture in the draw..
 
 #### 3. Draw with immediate mode
 ```
