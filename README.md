@@ -116,10 +116,12 @@ magSetTexture(UWORD unit, UWORD texture)
 unit is < MAGGIE_MAX_TEXCOORDS.
 
 The sizes supported are
+* 10 - 1024x1024
 * 9 - 512x512
 * 8 - 256x256
 * 7 - 128x128
 * 6 -  64x 64
+* 5 -  32x 32
 
 #### About polygons
 

@@ -8,20 +8,24 @@ ULONG GetTextureMipMapSize(UWORD format, UWORD texSize)
 	{
 		switch(texSize)
 		{
-			case 9 : return 512*512 / 2;
-			case 8 : return 256*256 / 2;
-			case 7 : return 128*128 / 2;
-			case 6 : return 64*64 / 2;
+			case 10 : return 1024 * 1024 / 2;
+			case 9 : return 512 * 512 / 2;
+			case 8 : return 256 * 256 / 2;
+			case 7 : return 128 * 128 / 2;
+			case 6 : return 64 * 64 / 2;
+			case 5 : return 32 * 32 / 2;
 		}
 	}
 	else if(format == MAG_TEXFMT_RGBA)
 	{
 		switch(texSize)
 		{
-			case 9 : return 512*512 * 4;
-			case 8 : return 256*256 * 4;
-			case 7 : return 128*128 * 4;
-			case 6 : return 64*64 * 4;
+			case 10 : return 1024 * 1024 * 4;
+			case 9 : return 512 * 512 * 4;
+			case 8 : return 256 * 256 * 4;
+			case 7 : return 128 * 128 * 4;
+			case 6 : return 64 * 64 * 4;
+			case 5 : return 32 * 32 * 4;
 		}
 	}
 	return 0;
@@ -33,10 +37,12 @@ ULONG GetTexturePixelWidth(UWORD texSize)
 {
 	switch(texSize)
 	{
+		case 10 : return 1024;
 		case 9 : return 512;
 		case 8 : return 256;
 		case 7 : return 128;
 		case 6 : return 64;
+		case 5 : return 32;
 	}
 	return 0;
 }
@@ -47,10 +53,12 @@ ULONG GetTexturePixelHeight(UWORD texSize)
 {
 	switch(texSize)
 	{
+		case 10 : return 1024;
 		case 9 : return 512;
 		case 8 : return 256;
 		case 7 : return 128;
 		case 6 : return 64;
+		case 5 : return 32;
 	}
 	return 0;
 }
@@ -63,20 +71,24 @@ ULONG GetTextureSize(UWORD format, UWORD texSize)
 	{
 		switch(texSize)
 		{
-			case 9 : return (512*512 + 256*256 + 128*128 + 64*64) / 2;
-			case 8 : return (256*256 + 128*128 + 64*64) / 2;
-			case 7 : return (128*128 + 64*64) / 2;
-			case 6 : return (64*64) / 2;
+			case 10 : return (1024*1024 + 512*512 + 256*256 + 128*128 + 64*64 + 32*32) / 2;
+			case 9 : return (512*512 + 256*256 + 128*128 + 64*64 + 32*32) / 2;
+			case 8 : return (256*256 + 128*128 + 64*64 + 32*32) / 2;
+			case 7 : return (128*128 + 64*64 + 32*32) / 2;
+			case 6 : return (64*64 + 32*32) / 2;
+			case 5 : return (32*32) / 2;
 		}
 	}
 	else if(format == MAG_TEXFMT_RGBA)
 	{
 		switch(texSize)
 		{
-			case 9 : return (512*512 + 256*256 + 128*128 + 64*64) * 4;
-			case 8 : return (256*256 + 128*128 + 64*64) * 4;
-			case 7 : return (128*128 + 64*64) * 4;
-			case 6 : return (64*64) * 4;
+			case 10 : return (1024*1024 + 512*512 + 256*256 + 128*128 + 64*64 + 32*32) * 4;
+			case 9 : return (512*512 + 256*256 + 128*128 + 64*64 + 32*32) * 4;
+			case 8 : return (256*256 + 128*128 + 64*64 + 32*32) * 4;
+			case 7 : return (128*128 + 64*64 + 32*32) * 4;
+			case 6 : return (64*64 + 32*32) * 4;
+			case 5 : return (32*32) * 4;
 		}
 	}
 	return 0;
@@ -89,20 +101,6 @@ ULONG GetTextureMipMapOffset(UWORD format, UWORD topLevel, UWORD mipmap)
 	if(topLevel < mipmap)
 		return 0;
 	return GetTextureSize(format, topLevel) - GetTextureSize(format, mipmap);
-}
-
-/*****************************************************************************/
-
-APTR GetTextureData(magTexture *txtr)
-{
-	return txtr->data;
-}
-
-/*****************************************************************************/
-
-int GetTexSizeIndex(magTexture *txtr)
-{
-	return txtr->texSize;
 }
 
 /*****************************************************************************/
@@ -168,13 +166,13 @@ void magUploadTexture(REG(d0, UWORD txtr), REG(d1, UWORD mipmap), REG(a0, APTR d
 
 	if(mipmap > texture->texSize)
 		return;
-	if(mipmap < 6)
+	if(mipmap < 5)
 		return;
 
 	ULONG mipmapSize = GetTextureMipMapSize(texture->format, mipmap);
 	ULONG mipmapOffset = GetTextureMipMapOffset(texture->format, texture->texSize, mipmap);
 
-	UBYTE *dst = GetTextureData(texture);// + mipmapOffset;
+	UBYTE *dst = GetTextureData(texture) + mipmapOffset;
 	UBYTE *src = (UBYTE *)data;
 	if(lib->hasMaggie)
 	{
