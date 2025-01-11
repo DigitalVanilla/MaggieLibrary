@@ -1,6 +1,7 @@
 	include "lvo/exec_lib.i"
 	include "lvo/lowlevel_lib.i"
 	include "lvo/Maggie_lvo.i"
+	include "maggie_flags.i"
 
 	include "libraries/lowlevel.i"
 	include "exec/memory.i"
@@ -80,13 +81,13 @@ RunDraw:
 	lea		ViewMatrix,a0
 	LIBCALL	magSetViewMatrix
 
-	move.w	#$0086,d0
+	move.w	#MAG_DRAWMODE_BILINEAR|MAG_DRAWMODE_32BIT|MAG_DRAWMODE_MIPMAP,d0
 	LIBCALL	magSetDrawMode
 
-	moveq	#$3f,d0
+	move.l	#$00112233,d0
 	LIBCALL	magClearColour
 
-	moveq	#1,d0
+	moveq	#MAG_CLEAR_COLOUR,d0
 	LIBCALL	magClear
 
 	move.w	vHandle,d0
@@ -232,33 +233,33 @@ SetupResources:
 	move.w	#5*6-1,d2									; Number of uploaded indices
 	LIBCALL	magUploadIndexBuffer
 
-	moveq	#8,d0										; Size of texture is 128x128
+	moveq	#8,d0										; Size of texture is 256x256
 	LIBCALL	magAllocateTexture
 	move.w	d0,tHandle
 
 	lea		Texture,a2
 	move.l	a2,a0
 	move.w	tHandle,d0
-	moveq	#8,d1										; Miplevel to upload
-	moveq	#0,d2										; Format is DXT1
+	moveq	#8,d1										; Miplevel 256x256
+	moveq	#MAG_TEXFMT_DXT1,d2
 	LIBCALL	magUploadTexture
+
 	add.l	#256*128,a2
 	move.l	a2,a0
 	move.w	tHandle,d0
-	moveq	#7,d1										; Miplevel to upload
-	moveq	#0,d2										; Format is DXT1
+	moveq	#7,d1										; Miplevel 128x128
 	LIBCALL	magUploadTexture
+
 	add.l	#128*64,a2
 	move.l	a2,a0
 	move.w	tHandle,d0
-	moveq	#6,d1										; Miplevel to upload
-	moveq	#0,d2										; Format is DXT1
+	moveq	#6,d1										; Miplevel 64x64
 	LIBCALL	magUploadTexture
+
 	add.l	#64*32,a2
 	move.l	a2,a0
 	move.w	tHandle,d0
-	moveq	#5,d1										; Miplevel to upload
-	moveq	#0,d2										; Format is DXT1
+	moveq	#5,d1										; Miplevel 32x32
 	LIBCALL	magUploadTexture
 
 	rts
