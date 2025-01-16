@@ -9,6 +9,15 @@
 
 /*****************************************************************************/
 
+#include <hardware/custom.h>
+#include <hardware/dmabits.h>
+
+/*****************************************************************************/
+
+extern struct Custom custom;
+
+/*****************************************************************************/
+
 #define XRES 640
 #define YRES 360
 #define BPP 2
@@ -159,6 +168,9 @@ int main(int argc, char *argv[])
 	UWORD oldMode = *SAGA_ScreenModeRead;
 	ULONG oldScreen = *SAGA_ChunkyDataRead;
 
+	UWORD oldDMAcon = custom.dmaconr & (DMAF_RASTER | DMAF_COPPER);
+	custom.dmacon = DMAF_RASTER | DMAF_COPPER;
+
 	*SAGA_ScreenMode = MAGGIE_MODE;
 
 	mat4 worldMatrix, viewMatrix, perspective;
@@ -211,6 +223,8 @@ int main(int argc, char *argv[])
 
 	*SAGA_ScreenMode = oldMode;
 	*SAGA_ChunkyData = oldScreen;
+
+	custom.dmacon = DMAF_SETCLR | oldDMAcon;
 
 	SystemControl(SCON_TakeOverSys, FALSE, TAG_DONE); /* Restore system */
 

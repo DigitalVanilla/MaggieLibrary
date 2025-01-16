@@ -17,6 +17,11 @@ LIBCALL	MACRO
 StartCode::
 	movem.l	d1-d7/a0-a6,-(a7)
 
+	move.w	$dff002,d0
+	andi.w	#$0180,d0
+	move.w	d0,oldDmacon
+	move.w	#$0180,$dff096
+
 	bsr		LoadLibraries
 	bsr		SetupResources
 
@@ -26,6 +31,10 @@ StartCode::
 
 	bsr		FreeResources
 	bsr		CloseLibraries
+
+	move.w	oldDmacon,d0
+	or.w	#$8000,d0
+	move.w	d0,$dff096
 
 	movem.l	(a7)+,d1-d7/a0-a6
 	moveq	#0,d0
@@ -359,6 +368,9 @@ CloseLibraries:
 
 vblPassed:		dc.l	0
 intHandle:		dc.l	0
+oldDmacon:		dc.w	0
+
+	align 2
 
 MaggieBase:		dc.l	0
 MaggieName:		dc.b	"libs/maggie.library",0

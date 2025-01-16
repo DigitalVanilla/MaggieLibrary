@@ -10,6 +10,13 @@
 #include <maggie_flags.h>
 #include <cybergraphx/cybergraphics.h>
 
+#include <hardware/custom.h>
+#include <hardware/dmabits.h>
+
+/*****************************************************************************/
+
+extern struct Custom custom;
+
 /*****************************************************************************/
 
 #define XRES 640
@@ -179,6 +186,9 @@ int main(int argc, char *argv[])
 
 	SystemControl(SCON_TakeOverSys, TRUE, TAG_DONE);
 
+	UWORD oldDMAcon = custom.dmaconr & (DMAF_RASTER | DMAF_COPPER);
+	custom.dmacon = DMAF_RASTER | DMAF_COPPER;
+
 	oldMode = *SAGA_ScreenModeRead;
 	oldScreen = *SAGA_ChunkyDataRead;
 
@@ -269,6 +279,8 @@ int main(int argc, char *argv[])
 
 	*SAGA_ScreenMode = oldMode;
 	*SAGA_ChunkyData = oldScreen;
+
+	custom.dmacon = DMAF_SETCLR | oldDMAcon;
 
 	SystemControl(SCON_TakeOverSys, FALSE, TAG_DONE); /* Restore system */
 
