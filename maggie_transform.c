@@ -48,8 +48,8 @@ void TexGenBuffer(struct MaggieTransVertex * restrict dstVtx, struct MaggieVerte
 				vec3_tform(&viewNormal, &lib->modelView, &vtx[i].normal, 0.0f); // This is nonsense..
 				for(UWORD j = 0; j < MAGGIE_MAX_TEXCOORDS; ++j)
 				{
-					dstVtx[i].tex[j].u = (viewNormal.x * 0.5 + 0.5f) * 256.0f * 65536.0f;
-					dstVtx[i].tex[j].v = (viewNormal.y * 0.5 + 0.5f) * 256.0f * 65536.0f;
+					dstVtx[i].tex[j].u = (viewNormal.x * 0.5f + 0.5f) * 256.0f * 65536.0f;
+					dstVtx[i].tex[j].v = (viewNormal.y * 0.5f + 0.5f) * 256.0f * 65536.0f;
 					dstVtx[i].tex[j].w = 1.0f;
 				}
 			}

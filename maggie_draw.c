@@ -111,8 +111,8 @@ int ComputeClipCodes(UBYTE *clipCodes, struct MaggieTransVertex *vtx, UWORD nVer
 
 void NormaliseVertexBuffer(struct MaggieTransVertex *vtx, int nVerts, UBYTE *clipCodes, MaggieBase *lib)
 {
-	float offsetScaleX = (lib->xres + 0.5) * 0.5f;
-	float offsetScaleY = (lib->yres + 0.5) * 0.5f;
+	float offsetScaleX = (lib->xres + 0.5f) * 0.5f;
+	float offsetScaleY = (lib->yres + 0.5f) * 0.5f;
 	for(int i = 0; i < nVerts; ++i)
 	{
 		if(clipCodes[i])
@@ -136,8 +136,8 @@ void NormaliseVertexBuffer(struct MaggieTransVertex *vtx, int nVerts, UBYTE *cli
 
 void NormaliseClippedVertexBuffer(struct MaggieTransVertex *vtx, int nVerts, MaggieBase *lib)
 {
-	float offsetScaleX = (lib->xres + 0.5) * 0.5f;
-	float offsetScaleY = (lib->yres + 0.5) * 0.5f;
+	float offsetScaleX = (lib->xres + 0.5f) * 0.5f;
+	float offsetScaleY = (lib->yres + 0.5f) * 0.5f;
 	for(int i = 0; i < nVerts; ++i)
 	{
 		float oow = 1.0f / vtx[i].pos.w;

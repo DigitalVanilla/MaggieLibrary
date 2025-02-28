@@ -57,6 +57,7 @@ static void DrawHardwareSpan(int len, int dUUuu, int dVVvv)
 {
 	maggieRegs.uDelta = dUUuu;
 	maggieRegs.vDelta = dVVvv;
+//	maggieRegs.uCoord = len;
 	maggieRegs.startLength = len;
 }
 
@@ -73,7 +74,7 @@ void DrawSpansHW32ZBuffer(int ymin, int ymax, MaggieBase *lib)
 	magEdgePos *edges = &lib->magEdge[ymin];
 
 	int modulo = lib->xres;
-	ULONG *pixels = ((ULONG *)lib->screen) + ymin * lib->xres;
+	LONG *pixels = ((LONG *)lib->screen) + ymin * lib->xres;
 	UWORD *zbuffer = lib->depthBuffer + ymin * lib->xres;
 
 	int scissorLeft = lib->scissor.x0;
@@ -84,7 +85,7 @@ void DrawSpansHW32ZBuffer(int ymin, int ymax, MaggieBase *lib)
 		int x0 = edges[i].xPosLeft;
 		int x1 = edges[i].xPosRight;
 
-		ULONG *dstColPtr = pixels + x0;
+		LONG *dstColPtr = pixels + x0;
 		UWORD *dstZPtr = zbuffer + x0;
 
 		pixels += modulo;
@@ -129,7 +130,7 @@ void DrawSpansHW32ZBuffer(int ymin, int ymax, MaggieBase *lib)
 		float vDDA = (edges[i].vowRight - edges[i].vowLeft) * ooXLength;
 		float vPos = edges[i].vowLeft + preStep * vDDA;
 
-		float w = 1.0 / wPos;
+		float w = 1.0f / wPos;
 		LONG uStart = (uPos * w);
 		LONG vStart = (vPos * w);
 
@@ -149,7 +150,7 @@ void DrawSpansHW32ZBuffer(int ymin, int ymax, MaggieBase *lib)
 			while(len >= PIXEL_RUN)
 			{
 				wPos += wDDAFullRun;
-				w = 1.0 / wPos;
+				w = 1.0f / wPos;
 				uPos += uDDAFullRun;
 				vPos += vDDAFullRun;
 
@@ -171,7 +172,7 @@ void DrawSpansHW32ZBuffer(int ymin, int ymax, MaggieBase *lib)
 			float ooLen = 1.0f / len;
 
 			wPos += wDDA * len;
-			w = 1.0 / wPos;
+			w = 1.0f / wPos;
 			uPos += FToI(uDDA * len);
 			vPos += FToI(vDDA * len);
 
@@ -244,7 +245,7 @@ void DrawSpansHW32(int ymin, int ymax, MaggieBase *lib)
 		float vDDA = (edges[i].vowRight - edges[i].vowLeft) * ooXLength;
 		float vPos = edges[i].vowLeft + preStep * vDDA;
 
-		float w = 1.0 / wPos;
+		float w = 1.0f / wPos;
 		LONG uStart = FToI(uPos * w);
 		LONG vStart = FToI(vPos * w);
 
@@ -264,7 +265,7 @@ void DrawSpansHW32(int ymin, int ymax, MaggieBase *lib)
 			while(len >= PIXEL_RUN)
 			{
 				wPos += wDDAFullRun;
-				w = 1.0 / wPos;
+				w = 1.0f / wPos;
 				uPos += uDDAFullRun;
 				vPos += vDDAFullRun;
 
@@ -284,14 +285,14 @@ void DrawSpansHW32(int ymin, int ymax, MaggieBase *lib)
 		}
 		if(len > 0)
 		{
-			float w = 1.0 / wPos;
+			float w = 1.0f / wPos;
 			wPos += wDDA * len;
 			float ooLen = 1.0f / len;
 
 			uPos += FToI(uDDA * len);
 			vPos += FToI(vDDA * len);
 
-			w = 1.0 / wPos;
+			w = 1.0f / wPos;
 
 			LONG uEnd = FToI(uPos * w);
 			LONG vEnd = FToI(vPos * w);

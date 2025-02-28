@@ -5,9 +5,9 @@
 
 ULONG RGBToGrayScale(ULONG rgb)
 {
-	UBYTE r = rgb >> 16;
-	UBYTE g = rgb >>  8;
-	UBYTE b = rgb >>  0;
+	UBYTE r = (rgb >> 16) & 0xff;
+	UBYTE g = (rgb >>  8) & 0xff;
+	UBYTE b = (rgb >>  0) & 0xff;
 
 	ULONG gray = (ULONG)(r * 0.299f + g * 0.587f + b * 0.114f);
 	if(gray > 255)

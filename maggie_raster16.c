@@ -127,7 +127,7 @@ void DrawSpansHW16ZBuffer(int ymin, int ymax, MaggieBase *lib)
 		float vDDA = (edges[i].vowRight - edges[i].vowLeft) * ooXLength;
 		float vPos = edges[i].vowLeft + preStep * vDDA;
 
-		float w = 1.0 / wPos;
+		float w = 1.0f / wPos;
 		LONG uStart = (uPos * w);
 		LONG vStart = (vPos * w);
 
@@ -147,7 +147,7 @@ void DrawSpansHW16ZBuffer(int ymin, int ymax, MaggieBase *lib)
 			while(len >= PIXEL_RUN)
 			{
 				wPos += wDDAFullRun;
-				w = 1.0 / wPos;
+				w = 1.0f / wPos;
 				uPos += uDDAFullRun;
 				vPos += vDDAFullRun;
 
@@ -169,7 +169,7 @@ void DrawSpansHW16ZBuffer(int ymin, int ymax, MaggieBase *lib)
 			float ooLen = 1.0f / len;
 
 			wPos += wDDA * len;
-			w = 1.0 / wPos;
+			w = 1.0f / wPos;
 			uPos += FToI(uDDA * len);
 			vPos += FToI(vDDA * len);
 
@@ -242,7 +242,7 @@ void DrawSpansHW16(int ymin, int ymax, MaggieBase *lib)
 		float vDDA = (edges[i].vowRight - edges[i].vowLeft) * ooXLength;
 		float vPos = edges[i].vowLeft + preStep * vDDA;
 
-		float w = 1.0 / wPos;
+		float w = 1.0f / wPos;
 		LONG uStart = FToI(uPos * w);
 		LONG vStart = FToI(vPos * w);
 
@@ -262,7 +262,7 @@ void DrawSpansHW16(int ymin, int ymax, MaggieBase *lib)
 			while(len >= PIXEL_RUN)
 			{
 				wPos += wDDAFullRun;
-				w = 1.0 / wPos;
+				w = 1.0f / wPos;
 				uPos += uDDAFullRun;
 				vPos += vDDAFullRun;
 
@@ -282,14 +282,14 @@ void DrawSpansHW16(int ymin, int ymax, MaggieBase *lib)
 		}
 		if(len > 0)
 		{
-			float w = 1.0 / wPos;
+			float w = 1.0f / wPos;
 			wPos += wDDA * len;
 			float ooLen = 1.0f / len;
 
 			uPos += FToI(uDDA * len);
 			vPos += FToI(vDDA * len);
 
-			w = 1.0 / wPos;
+			w = 1.0f / wPos;
 
 			LONG uEnd = FToI(uPos * w);
 			LONG vEnd = FToI(vPos * w);
