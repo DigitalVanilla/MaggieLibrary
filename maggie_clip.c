@@ -5,7 +5,7 @@
 
 /*****************************************************************************/
 
-static void LerpVertex(struct MaggieTransVertex *res, const struct MaggieTransVertex *v0, const struct MaggieTransVertex *v1, float t)
+static void LerpTransVertex(struct MaggieTransVertex *res, const struct MaggieTransVertex *v0, const struct MaggieTransVertex *v1, float t)
 {
 	res->pos.x = (v1->pos.x - v0->pos.x) * t + v0->pos.x;
 	res->pos.y = (v1->pos.y - v0->pos.y) * t + v0->pos.y;
@@ -46,7 +46,7 @@ int ClipPolygon(struct MaggieTransVertex *verts, int nVerts)
 			float t = (v0->pos.w + v0->pos.x) / (v0->pos.x - v1->pos.x + v0->pos.w - v1->pos.w);
 			if(t < 0.0f) t = 0.0f;
 			if(t > 1.0f) t = 1.0f;
-			LerpVertex(&outBuffer[nOutput++], v0, v1, t);
+			LerpTransVertex(&outBuffer[nOutput++], v0, v1, t);
 		}
 		if(!out)
 		{
@@ -77,7 +77,7 @@ int ClipPolygon(struct MaggieTransVertex *verts, int nVerts)
 			float t = (v0->pos.w - v0->pos.x) / (v1->pos.x - v0->pos.x - v1->pos.w + v0->pos.w);
 			if(t < 0.0f) t = 0.0f;
 			if(t > 1.0f) t = 1.0f;
-			LerpVertex(&outBuffer[nOutput++], v0, v1, t);
+			LerpTransVertex(&outBuffer[nOutput++], v0, v1, t);
 		}
 		if(!out)
 		{
@@ -108,7 +108,7 @@ int ClipPolygon(struct MaggieTransVertex *verts, int nVerts)
 			float t = (v0->pos.w + v0->pos.y) / (v0->pos.y - v1->pos.y + v0->pos.w - v1->pos.w);
 			if(t < 0.0f) t = 0.0f;
 			if(t > 1.0f) t = 1.0f;
-			LerpVertex(&outBuffer[nOutput++], v0, v1, t);
+			LerpTransVertex(&outBuffer[nOutput++], v0, v1, t);
 		}
 		if(!out)
 		{
@@ -139,7 +139,7 @@ int ClipPolygon(struct MaggieTransVertex *verts, int nVerts)
 			float t = (v0->pos.w - v0->pos.y) / (v1->pos.y - v0->pos.y - v1->pos.w + v0->pos.w);
 			if(t < 0.0f) t = 0.0f;
 			if(t > 1.0f) t = 1.0f;
-			LerpVertex(&outBuffer[nOutput++], v0, v1, t);
+			LerpTransVertex(&outBuffer[nOutput++], v0, v1, t);
 		}
 		if(!out)
 		{
@@ -170,7 +170,7 @@ int ClipPolygon(struct MaggieTransVertex *verts, int nVerts)
 			float t = v0->pos.z / (v0->pos.z - v1->pos.z);
 			if(t < 0.0f) t = 0.0f;
 			if(t > 1.0f) t = 1.0f;
-			LerpVertex(&outBuffer[nOutput++], v0, v1, t);
+			LerpTransVertex(&outBuffer[nOutput++], v0, v1, t);
 		}
 		if(!out)
 		{
@@ -201,7 +201,7 @@ int ClipPolygon(struct MaggieTransVertex *verts, int nVerts)
 			float t = (v0->pos.w - v0->pos.z) / (v1->pos.z - v0->pos.z - v1->pos.w + v0->pos.w);
 			if(t < 0.0f) t = 0.0f;
 			if(t > 1.0f) t = 1.0f;
-			LerpVertex(&outBuffer[nOutput++], v0, v1, t);
+			LerpTransVertex(&outBuffer[nOutput++], v0, v1, t);
 		}
 		if(!out)
 		{
