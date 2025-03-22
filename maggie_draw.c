@@ -62,7 +62,7 @@ static void SetupHW(MaggieBase *lib)
 /*****************************************************************************/
 /*****************************************************************************/
 
-float TriangleArea(vec4 *p0, vec4 *p1, vec4 *p2)
+static float TriangleArea(vec4 *p0, vec4 *p1, vec4 *p2)
 {
 	float x0 = p1->x - p0->x;
 	float y0 = p1->y - p0->y;
@@ -341,8 +341,6 @@ static struct MaggieTransVertex clippedPoly[MAG_MAX_POLYSIZE + 8];
 
 void magDrawTrianglesUP(REG(a0, struct MaggieVertex *vtx), REG(d0, UWORD nVerts), REG(a6, MaggieBase *lib))
 {
-	SetupHW(lib);
-
 	for(int i = 0; i < nVerts; ++i)
 	{
 		vtxBufferUP[i] = vtx[i];
@@ -365,6 +363,8 @@ void magDrawTrianglesUP(REG(a0, struct MaggieVertex *vtx), REG(d0, UWORD nVerts)
 	struct GfxBase *GfxBase = lib->gfxBase;
 
 	OwnBlitter();
+
+	SetupHW(lib);
 
 	if(clipRes == CLIPPED_IN)
 	{
@@ -408,8 +408,6 @@ void magDrawTrianglesUP(REG(a0, struct MaggieVertex *vtx), REG(d0, UWORD nVerts)
 
 void magDrawIndexedTrianglesUP(REG(a0, struct MaggieVertex *vtx), REG(d0, UWORD nVerts), REG(a1, UWORD *indx), REG(d1, UWORD nIndx), REG(a6, MaggieBase *lib))
 {
-	SetupHW(lib);
-
 	for(int i = 0; i < nVerts; ++i)
 	{
 		vtxBufferUP[i] = vtx[i];
@@ -432,6 +430,8 @@ void magDrawIndexedTrianglesUP(REG(a0, struct MaggieVertex *vtx), REG(d0, UWORD 
 	struct GfxBase *GfxBase = lib->gfxBase;
 
 	OwnBlitter();
+
+	SetupHW(lib);
 
 	if(clipRes == CLIPPED_IN)
 	{
@@ -484,8 +484,6 @@ void magDrawIndexedTrianglesUP(REG(a0, struct MaggieVertex *vtx), REG(d0, UWORD 
 
 void magDrawIndexedPolygonsUP(REG(a0, struct MaggieVertex *vtx), REG(d0, UWORD nVerts), REG(a1, UWORD *indx), REG(d1, UWORD nIndx), REG(a6, MaggieBase *lib))
 {
-	SetupHW(lib);
-
 	for(int i = 0; i < nVerts; ++i)
 	{
 		vtxBufferUP[i] = vtx[i];
@@ -507,6 +505,8 @@ void magDrawIndexedPolygonsUP(REG(a0, struct MaggieVertex *vtx), REG(d0, UWORD n
 	struct GfxBase *GfxBase = lib->gfxBase;
 
 	OwnBlitter();
+
+	SetupHW(lib);
 
 	if(clipRes == CLIPPED_IN)
 	{
@@ -600,8 +600,6 @@ void FlushImmediateMode(MaggieBase *lib)
 
 void magDrawTriangles(REG(d0, UWORD startVtx), REG(d1, UWORD nVerts), REG(a6, MaggieBase *lib))
 {
-	SetupHW(lib);
-
 	struct MaggieVertex *vtx = GetVBVertices(lib->vertexBuffers[lib->vBuffer]) + startVtx;
 	struct MaggieTransVertex *transVtx = GetVBTransVertices(lib->vertexBuffers[lib->vBuffer]) + startVtx;
 	UBYTE *clipCodes = GetVBClipCodes(lib->vertexBuffers[lib->vBuffer]) + startVtx;
@@ -620,6 +618,8 @@ void magDrawTriangles(REG(d0, UWORD startVtx), REG(d1, UWORD nVerts), REG(a6, Ma
 
 	struct GfxBase *GfxBase = lib->gfxBase;
 	OwnBlitter();
+
+	SetupHW(lib);
 
 	if(clipRes == CLIPPED_IN)
 	{
@@ -736,8 +736,6 @@ void magDrawIndexedPolygons(REG(d0, UWORD startVtx), REG(d1, UWORD nVerts), REG(
 #if PROFILE
 	ULONG drawStart = GetClocks();
 #endif
-	SetupHW(lib);
-
 	UWORD *indexBuffer = GetIBIndices(lib->indexBuffers[lib->iBuffer]) + startIndx;
 	struct MaggieVertex *vtx = GetVBVertices(lib->vertexBuffers[lib->vBuffer]);
 	struct MaggieTransVertex *transVtx = GetVBTransVertices(lib->vertexBuffers[lib->vBuffer]);
@@ -763,7 +761,10 @@ void magDrawIndexedPolygons(REG(d0, UWORD startVtx), REG(d1, UWORD nVerts), REG(
 	}
 
 	struct GfxBase *GfxBase = lib->gfxBase;
+
 	OwnBlitter();
+
+	SetupHW(lib);
 
 	if(clipRes == CLIPPED_IN)
 	{
@@ -888,8 +889,6 @@ void ExpandSpriteBuffer(struct MaggieTransVertex *dest, struct MaggieSpriteVerte
 
 void magDrawSprites(REG(d0, UWORD startVtx), REG(d1, UWORD nSprites), REG(fp0, float spriteSize), REG(a6, MaggieBase *lib))
 {
-	SetupHW(lib);
-
 	struct MaggieVertex *vtx = GetVBVertices(lib->vertexBuffers[lib->vBuffer]);
 	TransformToSpriteBuffer(spriteBufferUP, &vtx[startVtx], nSprites, lib);
 	ExpandSpriteBuffer(transVtxBufferUP, spriteBufferUP, nSprites, spriteSize * 0.5f, lib);
@@ -902,6 +901,8 @@ void magDrawSprites(REG(d0, UWORD startVtx), REG(d1, UWORD nSprites), REG(fp0, f
 	struct GfxBase *GfxBase = lib->gfxBase;
 
 	OwnBlitter();
+
+	SetupHW(lib);
 
 	if(clipRes == CLIPPED_IN)
 	{
@@ -934,7 +935,6 @@ void magDrawSprites(REG(d0, UWORD startVtx), REG(d1, UWORD nSprites), REG(fp0, f
 
 void magDrawSpritesUP(REG(a0, struct MaggieSpriteVertex *vtx), REG(d0, UWORD nSprites), REG(fp0, float spriteSize), REG(a6, MaggieBase *lib))
 {
-	SetupHW(lib);
 
 	TransformSpriteBuffer(spriteBufferUP, vtx, nSprites, lib);
 	ExpandSpriteBuffer(transVtxBufferUP, spriteBufferUP, nSprites, spriteSize * 0.5f, lib);
@@ -947,6 +947,8 @@ void magDrawSpritesUP(REG(a0, struct MaggieSpriteVertex *vtx), REG(d0, UWORD nSp
 	struct GfxBase *GfxBase = lib->gfxBase;
 
 	OwnBlitter();
+
+	SetupHW(lib);
 
 	if(clipRes == CLIPPED_IN)
 	{
