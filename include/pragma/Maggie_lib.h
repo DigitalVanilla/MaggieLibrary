@@ -54,6 +54,11 @@
 #pragma amicall(MaggieBase,0x12c,magScissor(d0,d1,d2,d3))
 #pragma amicall(MaggieBase,0x132,magDrawSprites(d0,d1,fp0))
 #pragma amicall(MaggieBase,0x138,magDrawSpritesUP(a0,d0,fp0))
+#pragma amicall(MaggieBase,0x13e,magUploadVertexPositions(d0,a0,d1,d2))
+#pragma amicall(MaggieBase,0x144,magUploadVertexNormals(d0,a0,d1,d2))
+#pragma amicall(MaggieBase,0x14a,magUploadVertexTexCoords2(d0,a0,d1,d2))
+#pragma amicall(MaggieBase,0x150,magUploadVertexTexCoords3(d0,a0,d1,d2))
+#pragma amicall(MaggieBase,0x156,magUploadVertexColours(d0,a0,d1,d2))
 #endif
 #if defined(_DCC) || defined(__SASC)
 #pragma  libcall MaggieBase magSetScreenMemory     01e 10803
@@ -104,6 +109,11 @@
 #pragma  libcall MaggieBase magScissor             12c 321004
 #pragma flibcall MaggieBase magDrawSprites         132 1001000003
 #pragma flibcall MaggieBase magDrawSpritesUP       138 1000080003
+#pragma  libcall MaggieBase magUploadVertexPositions 13e 218004
+#pragma  libcall MaggieBase magUploadVertexNormals 144 218004
+#pragma  libcall MaggieBase magUploadVertexTexCoords2 14a 218004
+#pragma  libcall MaggieBase magUploadVertexTexCoords3 150 218004
+#pragma  libcall MaggieBase magUploadVertexColours 156 218004
 #endif
 
 #endif	/*  _INCLUDE_PRAGMA_MAGGIE_LIB_H  */

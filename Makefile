@@ -11,20 +11,20 @@ SOURCES=maggie.c \
 		maggie_draw.c \
 		maggie_clip.c \
 		maggie_linedraw.c \
-		maggie_raster.c \
-		maggie_raster32.c \
-		maggie_rasterSW32.c \
-		maggie_raster16.c \
-		maggie_rasterSW16.c \
+		maggie_drawspans.c \
+		raster/maggie_raster.s \
 		maggie_texture.c \
+		maggie_buffers.s \
 		maggie_dxt1.c \
-		maggie_debug.c \
 		maggie_stabs.c \
-		maggie_buffers.s
+		maggie_debug.c
 
-ASFLAGS=-m68080 -m68882 -quiet -Fhunk
+#		maggie_raster32.c \
+#		maggie_raster16.c \
 
-CFLAGS=-std=c11 -noixemul -Ofast -fomit-frame-pointer -m68030 -mregparm -mhard-float -I include -Wdouble-promotion
+ASFLAGS=-m68080 -m68882 -quiet -Fhunk -I /opt/amiga/m68k-amigaos/ndk-include
+
+CFLAGS=-std=c11 -noixemul -Ofast -fomit-frame-pointer -m68080 -mregparm -mhard-float -I include -Wdouble-promotion
 
 LFLAGS=-nostartfiles
 LDLIBS=

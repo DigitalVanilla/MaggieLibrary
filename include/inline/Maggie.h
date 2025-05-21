@@ -209,4 +209,24 @@
 	LP3NR(0x138, magDrawSpritesUP, struct MaggieSpriteVertex *, vtx, a0, UWORD, nSprites, d0, float, spriteSize, fp0, \
 	, MAGGIE_BASE_NAME)
 
+#define magUploadVertexPositions(vBuffer, pos, startVtx, nVerts) \
+	LP4NR(0x13e, magUploadVertexPositions, UWORD, vBuffer, d0, struct vec3 *, pos, a0, UWORD, startVtx, d1, UWORD, nVerts, d2, \
+	, MAGGIE_BASE_NAME)
+
+#define magUploadVertexNormals(vBuffer, norm, startVtx, nVerts) \
+	LP4NR(0x144, magUploadVertexNormals, UWORD, vBuffer, d0, struct vec3 *, norm, a0, UWORD, startVtx, d1, UWORD, nVerts, d2, \
+	, MAGGIE_BASE_NAME)
+
+#define magUploadVertexTexCoords2(vBuffer, uvs, startVtx, nVerts) \
+	LP4NR(0x14a, magUploadVertexTexCoords2, UWORD, vBuffer, d0, struct vec3 *, uvs, a0, UWORD, startVtx, d1, UWORD, nVerts, d2, \
+	, MAGGIE_BASE_NAME)
+
+#define magUploadVertexTexCoords3(vBuffer, uvs, startVtx, nVerts) \
+	LP4NR(0x150, magUploadVertexTexCoords3, UWORD, vBuffer, d0, struct vec2 *, uvs, a0, UWORD, startVtx, d1, UWORD, nVerts, d2, \
+	, MAGGIE_BASE_NAME)
+
+#define magUploadVertexColours(vBuffer, colours, startVtx, nVerts) \
+	LP4NR(0x156, magUploadVertexColours, UWORD, vBuffer, d0, ULONG *, colours, a0, UWORD, startVtx, d1, UWORD, nVerts, d2, \
+	, MAGGIE_BASE_NAME)
+
 #endif /*  _INLINE_MAGGIE_H  */

@@ -17,6 +17,8 @@
 #define MAGGIE_MAX_XRES	1920
 #define MAGGIE_MAX_YRES	1080
 
+#define SWIZZLE_BOTTOM_BIT 0
+
 /*****************************************************************************/
 
 #define PIXEL_RUN 16
@@ -60,6 +62,33 @@ typedef struct
 
 typedef struct
 {
+	float xPosLeft;
+	float xPosRight;
+	float zowLeft;
+	float zowRight;
+	float iowLeft;
+	float iowRight;
+	float uLeft;
+	float uRight;
+	float vLeft;
+	float vRight;
+} magEdgePosAffine;
+
+/*****************************************************************************/
+
+typedef struct
+{
+	float oowDDA;
+	float uowDDA;
+	float vowDDA;
+	float zDDA;
+	float iDDA;
+} magGradients;
+
+/*****************************************************************************/
+
+typedef struct
+{
 	int type;
 	vec3 pos;
 	vec3 dir;
@@ -72,16 +101,37 @@ typedef struct
 
 typedef struct
 {
-	UWORD x0;
-	UWORD y0;
-	UWORD x1;
-	UWORD y1;
+	int x0;
+	int y0;
+	int x1;
+	int y1;
 } ScissorRect;
 
 /*****************************************************************************/
 
 struct MaggieBase;
 typedef struct MaggieBase MaggieBase;
+
+/*****************************************************************************/
+
+typedef struct
+{
+	WORD x, y, z; // 8:8 fixed point
+} MaggieNormal;
+
+/*****************************************************************************/
+
+typedef struct
+{
+	UWORD nVerts;
+	ULONG memSize;
+	vec3 *positions;
+	MaggieNormal *normals;
+	struct MaggieTexCoord *uvs;
+	ULONG *colours;
+	UBYTE *clipCodes;
+	struct MaggieTransVertex *transVerts;
+} VertexBufferMemory;
 
 /*****************************************************************************/
 
@@ -118,7 +168,7 @@ struct MaggieBase
 	UWORD xres;
 	UWORD yres;
 	APTR screen;
-	UWORD *depth;
+	UWORD *depthBuffer;
 
 	/*******************/
 
@@ -151,13 +201,18 @@ struct MaggieBase
 
 	/*******************/
 
-	int vBuffer;
-	int iBuffer;
-	int txtrIndex;
+	ScissorRect scissor;
+	union
+	{
+		magEdgePos magEdge[MAGGIE_MAX_YRES];
+		magEdgePosAffine magEdgeAffine[MAGGIE_MAX_YRES];
+	};
 
 	/*******************/
 
-	UWORD *depthBuffer;
+	int vBuffer;
+	int iBuffer;
+	int txtrIndex;
 
 	/*******************/
 
@@ -165,9 +220,12 @@ struct MaggieBase
 	UWORD immModeVtx;
 	struct MaggieVertex ImmVtx;
 
+	UWORD upVertexBuffer;
+	UWORD upIndexBuffer;
+
 	/*******************/
 
-	ULONG *vertexBuffers[MAX_VERTEX_BUFFERS];
+	VertexBufferMemory *vertexBuffers[MAX_VERTEX_BUFFERS];
 	ULONG *indexBuffers[MAX_INDEX_BUFFERS];
 	magTexture *textures[MAX_TEXTURES];
 
@@ -176,10 +234,6 @@ struct MaggieBase
 	magLight lights[MAG_MAX_LIGHTS];
 
 	/*******************/
-
-	magEdgePos magEdge[MAGGIE_MAX_YRES];
-
-	ScissorRect scissor;
 
 #if PROFILE
 	struct
@@ -206,26 +260,26 @@ struct MaggieBase
 
 typedef struct
 {
-	APTR	texture;			/* 32bit texture source */
-	APTR	pixDest;			/* 32bit Destination Screen Addr */
-	APTR 	depthDest;			/* 32bit ZBuffer Addr */
-	UWORD	unused0;
-	UWORD	startLength;		/* 16bit LEN and START */
-	UWORD	texSize;			/* 16bit MIP texture size (10=1024/9=512/8=256/7=128/6=64) */
-	UWORD	mode;				/* 16bit MODE (Bit0=Bilienar) (Bit1=Zbuffer) (Bit2=16bit output) */
-	UWORD	unused1;
-	UWORD	modulo;				/* 16bit Destination Step */
-	ULONG	unused2;
-	ULONG	unused3;
-	ULONG	uCoord;				/* 32bit U (8:24 normalised) */
-	ULONG	vCoord;				/* 32bit V (8:24 normalised) */
-	LONG	uDelta;				/* 32bit dU (8:24 normalised) */
-	LONG	vDelta;				/* 32bit dV (8:24 normalised) */
-	UWORD	light;				/* 16bit Light Ll (8:8) */
-	WORD	lightDelta;			/* 16bit Light dLl (8:8) */
-	ULONG	lightRGBA;			/* 32bit Light color (ARGB) */
-	ULONG	depthStart;			/* 32bit Z (16:16) */
-	LONG	depthDelta;			/* 32bit Delta (16:16) */
+	APTR	texture;			/*  0 | 32bit texture source */
+	APTR	pixDest;			/*  4 | 32bit Destination Screen Addr */
+	APTR 	depthDest;			/*  8 | 32bit ZBuffer Addr */
+	UWORD	unused0;			/* 12 */
+	UWORD	startLength;		/* 14 | 16bit LEN and START */
+	UWORD	texSize;			/* 16 | 16bit MIP texture size (10=1024/9=512/8=256/7=128/6=64) */
+	UWORD	mode;				/* 18 | 16bit MODE (Bit0=Bilienar) (Bit1=Zbuffer) (Bit2=16bit output) */
+	UWORD	unused1;			/* 20 */
+	UWORD	modulo;				/* 22 | 16bit Destination Step */
+	ULONG	unused2;			/* 24 */
+	ULONG	unused3;			/* 28 */
+	ULONG	uCoord;				/* 32 | 32bit U (8:24 normalised) */
+	ULONG	vCoord;				/* 36 | 32bit V (8:24 normalised) */
+	LONG	uDelta;				/* 40 | 32bit dU (8:24 normalised) */
+	LONG	vDelta;				/* 44 | 32bit dV (8:24 normalised) */
+	UWORD	light;				/* 48 | 16bit Light Ll (8:8) */
+	WORD	lightDelta;			/* 50 | 16bit Light dLl (8:8) */
+	ULONG	lightRGBA;			/* 52 | 32bit Light color (ARGB) */
+	ULONG	depthStart;			/* 56 | 32bit Z (16:16) */
+	LONG	depthDelta;			/* 58 | 32bit Delta (16:16) */
 } __attribute__((packed)) MaggieRegs;
 
 /*****************************************************************************/
@@ -289,16 +343,23 @@ void magDrawSpritesUP(REG(a0, struct MaggieSpriteVertex *vtx), REG(d0, UWORD nSp
 /*****************************************************************************/
 // All Buffers/textures are GLOBAL, and must be freed at exit.
 /*****************************************************************************/
-
-// Allocate vertex buffers.
+// vertex buffers.
 
 UWORD magAllocateVertexBuffer(REG(d0, UWORD nVerts), REG(a6, MaggieBase *lib));
 void magUploadVertexBuffer(REG(d0, UWORD vBuffer), REG(a0, struct MaggieVertex *vtx), REG(d1, UWORD startVtx), REG(d2, UWORD nVerts), REG(a6, MaggieBase *lib));
 void magFreeVertexBuffer(REG(d0, UWORD vBuffer), REG(a6, MaggieBase *lib));
 
 /*****************************************************************************/
+// Upload individual vertex attributes. The start and counts are in vertices.
+void magUploadVertexPositions(REG(d0, UWORD vBuffer), REG(a0, vec3 *vtx), REG(d1, UWORD startVtx), REG(d2, UWORD nVerts), REG(a6, MaggieBase *lib));
+void magUploadVertexNormals(REG(d0, UWORD vBuffer), REG(a0, vec3 *normals), REG(d1, UWORD startVtx), REG(d2, UWORD nVerts), REG(a6, MaggieBase *lib));
+void magUploadVertexNormalsPacked(REG(d0, UWORD vBuffer), REG(a0, signed char *vtx), REG(d1, UWORD startVtx), REG(d2, UWORD nVerts), REG(a6, MaggieBase *lib));
+void magUploadVertexTexCoords2(REG(d0, UWORD vBuffer), REG(a0, vec2 *texCoords), REG(d1, UWORD startVtx), REG(d2, UWORD nVerts), REG(a6, MaggieBase *lib));
+void magUploadVertexTexCoords3(REG(d0, UWORD vBuffer), REG(a0, vec3 *texCoords), REG(d1, UWORD startVtx), REG(d2, UWORD nVerts), REG(a6, MaggieBase *lib));
+void magUploadVertexColours(REG(d0, UWORD vBuffer), REG(a0, ULONG *vtx), REG(d1, UWORD startVtx), REG(d2, UWORD nVerts), REG(a6, MaggieBase *lib));
 
-// Allocate index buffers
+/*****************************************************************************/
+// index buffers
 
 UWORD magAllocateIndexBuffer(REG(d0, UWORD nIndx), REG(a6, MaggieBase *lib));
 void magUploadIndexBuffer(REG(d0, UWORD iBuffer), REG(a0, UWORD *indx), REG(d1, UWORD startIndx), REG(d2, UWORD nIndx), REG(a6, MaggieBase *lib));
@@ -359,16 +420,22 @@ ULONG GetTextureMipMapOffset(UWORD format, UWORD topLevel, UWORD mipmap);
 
 void CompressRGB(UBYTE *dst, UBYTE *src, int width, int height, int pixelSize, int quality, MaggieBase *lib);
 void DeCompressDXT1(UBYTE *dst, UBYTE *src, int width, int height, MaggieBase *lib);
+void SwizzleDXT1Texture(APTR data, int xres, int yres);
 
 /*****************************************************************************/
 
 void PrepareVertexBuffer(struct MaggieTransVertex *transDst, struct MaggieVertex *vtx, UWORD nVerts);
-void TransformVertexBuffer(struct MaggieTransVertex * restrict dstVtx, struct MaggieVertex * restrict vtx, UWORD nVerts, MaggieBase *lib);
-void TexGenBuffer(struct MaggieTransVertex *dstVtx, struct MaggieVertex *vtx, UWORD nVerts, MaggieBase *lib);
+void TransformVertexPositions(struct MaggieTransVertex * restrict dstVtx, vec3 * restrict vtx, UWORD nVerts, MaggieBase *lib);
+void TexGenBuffer(VertexBufferMemory *src, int startIndex, int nVerts, MaggieBase *lib);
+
+
+/*****************************************************************************/
+// For UP stuff..
+void TransformVertexPositionsFromVertices(struct MaggieTransVertex * restrict dstVtx, struct MaggieVertex * restrict vtx, UWORD nVerts, MaggieBase *lib);
 
 /*****************************************************************************/
 
-void TransformToSpriteBuffer(struct MaggieSpriteVertex * restrict dstVtx, struct MaggieVertex * restrict vtx, UWORD nVerts, MaggieBase *lib);
+void TransformToSpriteBuffer(struct MaggieSpriteVertex * restrict dstVtx, vec3 * restrict vtx, UWORD nVerts, MaggieBase *lib);
 void TransformSpriteBuffer(struct MaggieSpriteVertex * restrict dstVtx, struct MaggieSpriteVertex * restrict vtx, UWORD nVerts, MaggieBase *lib);
 
 /*****************************************************************************/
@@ -377,19 +444,12 @@ ULONG RGBToGrayScale(ULONG rgb);
 
 /*****************************************************************************/
 
-UWORD GetVBNumVerts(ULONG *mem);
-struct MaggieVertex *GetVBVertices(ULONG *mem);
-UBYTE *GetVBClipCodes(ULONG *mem);
-struct MaggieTransVertex *GetVBTransVertices(ULONG *mem);
-
-/*****************************************************************************/
-
 UWORD GetIBNumIndices(ULONG *mem);
 UWORD *GetIBIndices(ULONG *mem);
 
 /*****************************************************************************/
 
-void DrawEdge(struct MaggieTransVertex *vtx0, struct MaggieTransVertex *vtx1, MaggieBase *lib);
+void DrawEdge(struct MaggieTransVertex *vtx0, struct MaggieTransVertex *vtx1, int miny, int maxy, MaggieBase *lib);
 
 /*****************************************************************************/
 
@@ -405,7 +465,7 @@ int ClipPolygon(struct MaggieTransVertex *verts, int nVerts);
 
 /*****************************************************************************/
 
-void LightBuffer(struct MaggieTransVertex *dest, struct MaggieVertex *src, int nVerts, MaggieBase *lib);
+void LightBuffer(VertexBufferMemory *src, int startIndex, int nVerts, MaggieBase *lib);
 
 /*****************************************************************************/
 // Asm functions
@@ -431,5 +491,12 @@ static int GetTexSizeIndex(magTexture *txtr)
 #if PROFILE
 ULONG GetClocks();
 #endif
+
+/*****************************************************************************/
+
+UWORD GetUserVertexBuffer(MaggieBase *lib);
+UWORD GetUserIndexBuffer(MaggieBase *lib);
+
+/*****************************************************************************/
 
 #endif // MAGGIE_INTERNAL_H_INCLUDED

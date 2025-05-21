@@ -27,10 +27,10 @@ static LONG maggieExpunge(MaggieBase *lib __asm("a6"))
 
 	for(int i = 0; i < MAX_VERTEX_BUFFERS; ++i)
 	{
-		ULONG *mem = lib->vertexBuffers[i];
-		if(mem)
+		VertexBufferMemory *vbMem = lib->vertexBuffers[i];
+		if(vbMem)
 		{
-			FreeMem(mem, mem[1]);
+			FreeMem(vbMem, vbMem->memSize);
 		}
 	}
 
@@ -139,6 +139,12 @@ static APTR functionTable[] =
 	magScissor,
 	magDrawSprites,
 	magDrawSpritesUP,
+	magUploadVertexPositions,
+	magUploadVertexNormals,
+	magUploadVertexTexCoords2,
+	magUploadVertexTexCoords3,
+	magUploadVertexColours,
+
 	(APTR)-1
 };
 
@@ -151,8 +157,8 @@ static APTR maggieInit(int segList __asm("a0"), MaggieBase *lib __asm("d0"), str
 	lib->lib.lib_Node.ln_Type = NT_LIBRARY;
 	lib->lib.lib_Node.ln_Name = (char *)libName;
 	lib->lib.lib_Flags = LIBF_CHANGED | LIBF_SUMUSED;
-	lib->lib.lib_Version = 2;
-	lib->lib.lib_Revision = 2;
+	lib->lib.lib_Version = 3;
+	lib->lib.lib_Revision = 3;
 	lib->lib.lib_IdString = (char *)libId;
 
 	lib->segList = segList;
@@ -168,6 +174,9 @@ static APTR maggieInit(int segList __asm("a0"), MaggieBase *lib __asm("d0"), str
 
 	lib->immModeVtx = 0xffff;
 	lib->nIModeVtx = 0;
+
+	lib->upVertexBuffer = 0xffff;
+	lib->upIndexBuffer = 0xffff;
 
 	lib->clearColour = 0x00000000;
 	lib->clearDepth = 0xffff;

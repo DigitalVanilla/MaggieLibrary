@@ -3,6 +3,52 @@
 #include <proto/graphics.h>
 #include <string.h>
 
+/*****************************************************************************/
+
+VertexBufferMemory *CreateVertexBufferMemory(UWORD nVerts, MaggieBase *lib)
+{
+	ULONG memSize = sizeof(VertexBufferMemory) +
+					sizeof(vec3) * nVerts +
+					sizeof(MaggieNormal) * nVerts +
+					sizeof(struct MaggieTexCoord) * nVerts +
+					sizeof(ULONG) * nVerts +
+					sizeof(UBYTE) * nVerts +
+					sizeof(struct MaggieTransVertex) * nVerts;
+
+	struct ExecBase *SysBase = lib->sysBase;
+
+	BYTE *ptr = (BYTE *)AllocMem(memSize, MEMF_ANY | MEMF_CLEAR);
+
+	VertexBufferMemory *vbMem = (VertexBufferMemory *)ptr;
+	ptr += sizeof(VertexBufferMemory);
+	vbMem->positions = (vec3 *)ptr;
+	ptr += sizeof(vec3) * nVerts;
+	vbMem->normals = (MaggieNormal *)ptr;
+	ptr += sizeof(MaggieNormal) * nVerts;
+	vbMem->uvs = (struct MaggieTexCoord *)ptr;
+	ptr += sizeof(vec3) * nVerts;
+	vbMem->colours = (ULONG *)ptr;
+	ptr += sizeof(ULONG) * nVerts;
+	vbMem->clipCodes = (UBYTE *)ptr;
+	ptr += sizeof(UBYTE) * nVerts;
+	vbMem->transVerts = (struct MaggieTransVertex *)ptr;
+
+	vbMem->nVerts = nVerts;
+	vbMem->memSize = memSize;
+
+	return vbMem;
+}
+
+/*****************************************************************************/
+
+void FreeVertexBufferMemory(VertexBufferMemory *mem, MaggieBase *lib)
+{
+	struct ExecBase *SysBase = lib->sysBase;
+	FreeMem(mem, mem->memSize);
+}
+
+/*****************************************************************************/
+
 void magSetScreenMemory(REG(a0, APTR *pixels), REG(d0, UWORD xres), REG(d1, UWORD yres), REG(a6, MaggieBase *lib))
 {
 	lib->xres = xres;
@@ -69,31 +115,31 @@ ULONG ColourTo16Bit(ULONG colour)
 
 /*****************************************************************************/
 
-UWORD GetVBNumVerts(ULONG *mem)
-{
-	return mem[0];
-}
+// UWORD GetVBNumVerts(ULONG *mem)
+// {
+// 	return mem[0];
+// }
 
 /*****************************************************************************/
 
-struct MaggieVertex *GetVBVertices(ULONG *mem)
-{
-	return (struct MaggieVertex *)&mem[2];
-}
+// struct MaggieVertex *GetVBVertices(ULONG *mem)
+// {
+// 	return (struct MaggieVertex *)&mem[2];
+// }
 
 /*****************************************************************************/
 
-UBYTE *GetVBClipCodes(ULONG *mem)
-{
-	return ((UBYTE *)&mem[2]) + sizeof(struct MaggieVertex) * GetVBNumVerts(mem);
-}
+// UBYTE *GetVBClipCodes(ULONG *mem)
+// {
+// 	return ((UBYTE *)&mem[2]) + sizeof(struct MaggieVertex) * GetVBNumVerts(mem);
+// }
 
 /*****************************************************************************/
 
-struct MaggieTransVertex *GetVBTransVertices(ULONG *mem)
-{
-	return (struct MaggieTransVertex *)(((UBYTE *)&mem[2]) + (sizeof(struct MaggieVertex) + 1) * GetVBNumVerts(mem));
-}
+// struct MaggieTransVertex *GetVBTransVertices(ULONG *mem)
+// {
+// 	return (struct MaggieTransVertex *)(((UBYTE *)&mem[2]) + (sizeof(struct MaggieVertex) + 1) * GetVBNumVerts(mem));
+// }
 
 /*****************************************************************************/
 
@@ -110,7 +156,7 @@ UWORD magAllocateVertexBuffer(REG(d0, UWORD nVerts), REG(a6, MaggieBase *lib))
 		if(!lib->vertexBuffers[i])
 		{
 			vBuffer = i;
-			lib->vertexBuffers[i] = (ULONG *)1;
+			lib->vertexBuffers[i] = (VertexBufferMemory *)1;
 			break;
 		}
 	}
@@ -119,35 +165,191 @@ UWORD magAllocateVertexBuffer(REG(d0, UWORD nVerts), REG(a6, MaggieBase *lib))
 
 	if(vBuffer == 0xffff)
 		return 0xffff;
-	ULONG memSize = (sizeof(struct MaggieVertex) + sizeof(struct MaggieTransVertex) + sizeof(UBYTE)) * nVerts + sizeof(ULONG) * 2;
-	ULONG *mem = (ULONG *)AllocMem(memSize, MEMF_ANY | MEMF_CLEAR);
-	mem[0] = nVerts;
-	mem[1] = memSize;
-	lib->vertexBuffers[vBuffer] = mem;
 
+	lib->vertexBuffers[vBuffer] = CreateVertexBufferMemory(nVerts, lib);
 	return vBuffer;
 }
 
 /*****************************************************************************/
 
-void magUploadVertexBuffer(REG(d0, UWORD vBuffer), REG(a0, struct MaggieVertex *vtx), REG(d1, UWORD startVtx), REG(d2, UWORD nVerts), REG(a6, MaggieBase *lib))
+vec3 *GetVertexPositions(UWORD vBuffer, MaggieBase *lib)
 {
-	ULONG *mem = lib->vertexBuffers[vBuffer];
+	VertexBufferMemory *mem = lib->vertexBuffers[vBuffer];
+	if(!mem)
+		return NULL;
+
+	return mem->positions;
+}
+
+/*****************************************************************************/
+
+MaggieNormal *GetVertexNormals(UWORD vBuffer, MaggieBase *lib)
+{
+	VertexBufferMemory *mem = lib->vertexBuffers[vBuffer];
+	if(!mem)
+		return NULL;
+
+	return mem->normals;
+}
+
+/*****************************************************************************/
+
+struct MaggieTexCoord *GetVertexTexCoords(UWORD vBuffer, MaggieBase *lib)
+{
+	VertexBufferMemory *mem = lib->vertexBuffers[vBuffer];
+	if(!mem)
+		return NULL;
+
+	return mem->uvs;
+}
+
+/*****************************************************************************/
+
+ULONG *GetVertexColours(UWORD vBuffer, MaggieBase *lib)
+{
+	VertexBufferMemory *mem = lib->vertexBuffers[vBuffer];
+	if(!mem)
+		return NULL;
+
+	return mem->colours;
+}
+
+/*****************************************************************************/
+
+void magUploadVertexPositions(REG(d0, UWORD vBuffer), REG(a0, vec3 *pos), REG(d1, UWORD startVtx), REG(d2, UWORD nVerts), REG(a6, MaggieBase *lib))
+{
+	VertexBufferMemory *mem = lib->vertexBuffers[vBuffer];
 	if(!mem)
 		return;
-
-	if(startVtx + nVerts > GetVBNumVerts(mem))
+	if(startVtx + nVerts > mem->nVerts)
 	{
-		nVerts = GetVBNumVerts(mem) - startVtx;
+		nVerts = mem->nVerts - startVtx;
 	}
+	if(nVerts <= 0)
+		return;
+	memcpy(mem->positions + startVtx, pos, sizeof(vec3) * nVerts);
+}
 
-	struct MaggieVertex *dst = GetVBVertices(mem);
+/*****************************************************************************/
+
+void magUploadVertexNormals(REG(d0, UWORD vBuffer), REG(a0, vec3 *norm), REG(d1, UWORD startVtx), REG(d2, UWORD nVerts), REG(a6, MaggieBase *lib))
+{
+	VertexBufferMemory *mem = lib->vertexBuffers[vBuffer];
+	if(!mem)
+		return;
+	if(startVtx + nVerts > mem->nVerts)
+	{
+		nVerts = mem->nVerts - startVtx;
+	}
+	if(nVerts <= 0)
+		return;
+
 	for(int i = 0; i < nVerts; ++i)
 	{
-		dst[i + startVtx] = vtx[startVtx + i];
+		mem->normals[startVtx + i].x = (UWORD)(norm[i].x * 256.0f);
+		mem->normals[startVtx + i].y = (UWORD)(norm[i].y * 256.0f);
+		mem->normals[startVtx + i].z = (UWORD)(norm[i].z * 256.0f);
 	}
-	struct MaggieTransVertex *transDst = GetVBTransVertices(mem);
-	PrepareVertexBuffer(&transDst[startVtx], &dst[startVtx], nVerts);
+}
+
+/*****************************************************************************/
+
+void magUploadVertexTexCoords2(REG(d0, UWORD vBuffer), REG(a0, vec2 *uvs), REG(d1, UWORD startVtx), REG(d2, UWORD nVerts), REG(a6, MaggieBase *lib))
+{
+	VertexBufferMemory *mem = lib->vertexBuffers[vBuffer];
+	if(!mem)
+		return;
+	if(startVtx + nVerts > mem->nVerts)
+	{
+		nVerts = mem->nVerts - startVtx;
+	}
+	if(nVerts <= 0)
+		return;
+
+	for(int i = 0; i < nVerts; ++i)
+	{
+		mem->uvs[startVtx + i].u = uvs[i].x * 65536.0f * 256.0f;
+		mem->uvs[startVtx + i].v = uvs[i].y * 65536.0f * 256.0f;
+		mem->uvs[startVtx + i].w = 65536.0f * 256.0f;
+	}
+
+}
+
+/*****************************************************************************/
+
+void magUploadVertexTexCoords3(REG(d0, UWORD vBuffer), REG(a0, vec3 *uvs), REG(d1, UWORD startVtx), REG(d2, UWORD nVerts), REG(a6, MaggieBase *lib))
+{
+	VertexBufferMemory *mem = lib->vertexBuffers[vBuffer];
+	if(!mem)
+		return;
+	if(startVtx + nVerts > mem->nVerts)
+	{
+		nVerts = mem->nVerts - startVtx;
+	}
+	if(nVerts <= 0)
+		return;
+
+	for(int i = 0; i < nVerts; ++i)
+	{
+		mem->uvs[startVtx + i].u = uvs[i].x * 65536.0f * 256.0f;
+		mem->uvs[startVtx + i].v = uvs[i].y * 65536.0f * 256.0f;
+		mem->uvs[startVtx + i].w = uvs[i].z * 65536.0f * 256.0f;
+	}
+}
+
+/*****************************************************************************/
+
+void magUploadVertexColours(REG(d0, UWORD vBuffer), REG(a0, ULONG *colours), REG(d1, UWORD startVtx), REG(d2, UWORD nVerts), REG(a6, MaggieBase *lib))
+{
+	VertexBufferMemory *mem = lib->vertexBuffers[vBuffer];
+	if(!mem)
+		return;
+	if(startVtx + nVerts > mem->nVerts)
+	{
+		nVerts = mem->nVerts - startVtx;
+	}
+	if(nVerts <= 0)
+		return;
+
+	for(int i = 0; i < nVerts; ++i)
+	{
+		UWORD gray = ColourTo16Bit(colours[i]);
+		mem->colours[startVtx + i] = gray | (gray << 8);
+	}
+}
+
+/*****************************************************************************/
+
+static MaggieNormal CompressNormal(vec3 *normal)
+{
+	MaggieNormal n;
+	n.x = (WORD)(normal->x * 256.0f);
+	n.y = (WORD)(normal->y * 256.0f);
+	n.z = (WORD)(normal->z * 256.0f);
+	return n;
+}
+
+void magUploadVertexBuffer(REG(d0, UWORD vBuffer), REG(a0, struct MaggieVertex *vtx), REG(d1, UWORD startVtx), REG(d2, UWORD nVerts), REG(a6, MaggieBase *lib))
+{
+	VertexBufferMemory *vbMem = lib->vertexBuffers[vBuffer];
+	if(!vbMem)
+		return;
+
+	if(startVtx + nVerts > vbMem->nVerts)
+	{
+		nVerts = vbMem->nVerts - startVtx;
+	}
+
+	for(int i = 0; i < nVerts; ++i)
+	{
+		vbMem->positions[startVtx + i] = vtx[i].pos;
+		vbMem->normals[startVtx + i] = CompressNormal(&vtx[i].normal);
+		vbMem->uvs[startVtx + i].u = vtx[i].tex[0].u * 256.0f * 65536.0f;
+		vbMem->uvs[startVtx + i].v = vtx[i].tex[0].v * 256.0f * 65536.0f;
+		vbMem->uvs[startVtx + i].w = vtx[i].tex[0].w;
+		vbMem->colours[startVtx + i] = RGBToGrayScale(vtx[i].colour) | (RGBToGrayScale(vtx[i].colour) << 8);
+	}
+	PrepareVertexBuffer(&vbMem->transVerts[startVtx], &vtx[startVtx], nVerts);
 }
 
 /*****************************************************************************/
@@ -157,18 +359,14 @@ void magFreeVertexBuffer(REG(d0, UWORD vBuffer), REG(a6, MaggieBase *lib))
 	if(vBuffer >= MAX_VERTEX_BUFFERS)
 		return;
 
-	ULONG *mem = lib->vertexBuffers[vBuffer];
-
-	if(!mem)
+	VertexBufferMemory *vbMem = lib->vertexBuffers[vBuffer];
+	if(!vbMem)
 		return;
 
-	ULONG size = mem[1];
+	lib->vertexBuffers[vBuffer] = NULL;
 
 	struct ExecBase *SysBase = lib->sysBase;
-
-	FreeMem(mem, size);
-
-	lib->vertexBuffers[vBuffer] = NULL;
+	FreeMem(vbMem, vbMem->memSize);
 }
 
 /*****************************************************************************/
@@ -307,6 +505,28 @@ void magEndScene(REG(a6, MaggieBase *lib))
 /*****************************************************************************/
 /*****************************************************************************/
 
+UWORD GetUserVertexBuffer(MaggieBase *lib)
+{
+	if(lib->upVertexBuffer == 0xffff)
+	{
+		lib->upVertexBuffer = magAllocateVertexBuffer(65535, lib);
+	}
+	return lib->upVertexBuffer;
+}
+
+/*****************************************************************************/
+
+UWORD GetUserIndexBuffer(MaggieBase *lib)
+{
+	if(lib->upIndexBuffer == 0xffff)
+	{
+		lib->upIndexBuffer = magAllocateVertexBuffer(65535, lib);
+	}
+	return lib->upVertexBuffer;
+}
+
+/*****************************************************************************/
+
 // Immediate mode, or "slow mode"..
 void magBegin(REG(a6, MaggieBase *lib))
 {
@@ -337,17 +557,14 @@ void magVertex(REG(fp0, float x), REG(fp1, float y), REG(fp2, float z), REG(a6, 
 	}
 	if(lib->immModeVtx == 0xffff)
 		return;
-	struct MaggieVertex *vtx = GetVBVertices(lib->vertexBuffers[lib->immModeVtx]);
-	vtx[lib->nIModeVtx].pos.x = x;
-	vtx[lib->nIModeVtx].pos.y = y;
-	vtx[lib->nIModeVtx].pos.z = z;
-	vtx[lib->nIModeVtx].normal = lib->ImmVtx.normal;
-	for(int i = 0; i < MAGGIE_MAX_TEXCOORDS; ++i)
-	{
-		vtx[lib->nIModeVtx].tex[i].u = lib->ImmVtx.tex[i].u * 256.0f * 65536.0f;
-		vtx[lib->nIModeVtx].tex[i].v = lib->ImmVtx.tex[i].v * 256.0f * 65536.0f;
-	}
-	vtx[lib->nIModeVtx].colour = RGBToGrayScale(lib->ImmVtx.colour);
+	VertexBufferMemory *vbMem = lib->vertexBuffers[lib->immModeVtx];
+	vbMem->positions[lib->nIModeVtx].x = x;
+	vbMem->positions[lib->nIModeVtx].y = y;
+	vbMem->positions[lib->nIModeVtx].z = z;
+	vbMem->normals[lib->nIModeVtx] = CompressNormal(&lib->ImmVtx.normal);
+	vbMem->uvs[lib->nIModeVtx].u = lib->ImmVtx.tex[0].u * 256.0f * 65536.0f;
+	vbMem->uvs[lib->nIModeVtx].v = lib->ImmVtx.tex[0].v * 256.0f * 65536.0f;
+	vbMem->colours[lib->nIModeVtx] = RGBToGrayScale(lib->ImmVtx.colour);
 	lib->nIModeVtx++;
 }
 

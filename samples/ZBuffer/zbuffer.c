@@ -176,9 +176,9 @@ int main(int argc, char *argv[])
 		return 0;
 	}
 
-	screenMem = AllocMem(SCREENSIZE * NFRAMES, MEMF_ANY | MEMF_CLEAR);
+	screenMem = AllocMem(SCREENSIZE * NFRAMES + 16, MEMF_ANY | MEMF_CLEAR);
 
-	screenPixels[0] = screenMem;
+	screenPixels[0] = (UBYTE *)((((ULONG)screenMem) + 15) & ~15);
 	for(int i = 1; i < NFRAMES; ++i)
 	{
 		screenPixels[i] = screenPixels[i - 1] + SCREENSIZE;
@@ -287,6 +287,7 @@ int main(int argc, char *argv[])
 	FreeMem(screenMem, SCREENSIZE * NFRAMES);
 
 	CloseLibrary(LowLevelBase);
+//	RemLibrary(MaggieBase);
 	CloseLibrary(MaggieBase);
 
 	return 0;

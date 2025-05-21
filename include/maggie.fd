@@ -68,4 +68,10 @@ magScissor(x0,y0,x1,y1)(d0,d1,d2,d3)
 magDrawSprites(startVtx,nSprites,spriteSize)(d0,d1,fp0)
 magDrawSpritesUP(vtx,nSprites,spriteSize)(a0,d0,fp0)
 *
+magUploadVertexPositions(vBuffer,pos,startVtx,nVerts)(d0,a0,d1,d2)
+magUploadVertexNormals(vBuffer,norm,startVtx,nVerts)(d0,a0,d1,d2)
+magUploadVertexTexCoords2(vBuffer,uvs,startVtx,nVerts)(d0,a0,d1,d2)
+magUploadVertexTexCoords3(vBuffer,uvs,startVtx,nVerts)(d0,a0,d1,d2)
+magUploadVertexColours(vBuffer,colours,startVtx,nVerts)(d0,a0,d1,d2)
+*
 ##end

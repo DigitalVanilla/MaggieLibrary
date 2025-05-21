@@ -1,5 +1,16 @@
 	include "exec/types.i"
 
+	STRUCTURE TransVtx,0
+		FLOAT TransVtx_PosX
+		FLOAT TransVtx_PosY
+		FLOAT TransVtx_PosZ
+		FLOAT TransVtx_PosW
+		FLOAT TransVtx_U
+		FLOAT TransVtx_V
+		FLOAT TransVtx_W
+		FLOAT TransVtx_I
+		LONG TransVtx_Size
+
 	STRUCTURE EPos,0
 		FLOAT EPos_xPosLeft
 		FLOAT EPos_xPosRight

@@ -199,6 +199,9 @@ void magUploadTexture(REG(d0, UWORD txtr), REG(d1, UWORD mipmap), REG(a0, APTR d
 				CompressRGB(dst, src, GetTexturePixelWidth(mipmap), GetTexturePixelHeight(mipmap), 4, format & MAG_TEXCOMP_HQ, lib);
 			} break;
 		}
+#if SWIZZLE_BOTTOM_BIT
+		SwizzleDXT1Texture(dst, GetTexturePixelWidth(mipmap), GetTexturePixelHeight(mipmap));
+#endif
 	}
 	else
 	{

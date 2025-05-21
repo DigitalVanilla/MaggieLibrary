@@ -10,8 +10,6 @@ mkdir package/include
 cp -r fd/* package/include
 cp include/maggie* package/include
 
-
-
 make clean
 mkdir package/libs
 make
@@ -19,11 +17,18 @@ make strip
 cp maggie.library package/libs
 make clean
 
-cp test/Readme.txt package/
+cp Readme.txt package/
 
 mkdir package/bin
 
 cd package/samples
+
+cd Asm
+make
+make strip
+cp AsmSample ../../bin
+make clean
+cd ..
 
 cd ImmediateDraw
 make
@@ -70,3 +75,5 @@ cd ..
 cd ../..
 
 cp test/TestTexture.dds package/bin/TestTexture.dds
+
+cd ..

@@ -13,6 +13,10 @@
 
 /*****************************************************************************/
 
+#define MAG_DRAWMODE_AFFINE_MAPPING	0x1000
+
+/*****************************************************************************/
+
 #define MAG_DRAWMODE_BLEND_REPLACE	0x0000
 #define MAG_DRAWMODE_BLEND_ADD		0x0100
 #define MAG_DRAWMODE_BLEND_MUL		0x0200

@@ -8,6 +8,9 @@ struct MaggieClippedVertex;
 struct MaggieSpriteVertex;
 struct SpanPosition;
 
+struct vec3
+typedef struct vec3 vec3;
+
 void __magDummy(); // Duff prototype.. Not a function.
 
 void magSetScreenMemory(APTR *pixels, UWORD xres, UWORD yres);
@@ -63,6 +66,7 @@ UWORD magAllocateVertexBuffer(UWORD nVerts);
 void magUploadVertexBuffer(UWORD vBuffer, struct MaggieVertex *vtx, UWORD startVtx, UWORD nVerts);
 void magFreeVertexBuffer(UWORD vBuffer);
 
+/*****************************************************************************/
 /*****************************************************************************/
 
 // Allocate index buffers
@@ -123,6 +127,14 @@ void magScissor(UWORD x, UWORD y, UWORD width, UWORD height);
 
 void magDrawSprites(UWORD startVtx, UWORD nSprites, float spriteSize);
 void magDrawSpritesUP(struct MaggieSpriteVertex *vtx, UWORD nSprites, float spriteSize);
+
+/*****************************************************************************/
+
+void magUploadVertexPositions(UWORD vBuffer, struct vec3 *vtx, UWORD startVtx, UWORD nVerts);
+void magUploadVertexNormals(UWORD vBuffer, struct vec3 *normals, UWORD startVtx, UWORD nVerts);
+void magUploadVertexTexCoords2(UWORD vBuffer, struct vec3 *texCoords, UWORD startVtx, UWORD nVerts);
+void magUploadVertexTexCoords3(UWORD vBuffer, struct vec2 *texCoords, UWORD startVtx, UWORD nVerts);
+void magUploadVertexColours(UWORD vBuffer, ULONG *colours, UWORD startVtx, UWORD nVerts);
 
 /*****************************************************************************/
 

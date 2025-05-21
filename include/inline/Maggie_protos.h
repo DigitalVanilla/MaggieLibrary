@@ -149,4 +149,19 @@ void __magDrawSprites(__reg("a6") struct Library *, __reg("d0") UWORD startVtx, 
 void __magDrawSpritesUP(__reg("a6") struct Library *, __reg("a0") struct MaggieSpriteVertex * vtx, __reg("d0") UWORD nSprites, __reg("fp0") float spriteSize)="\tjsr\t-312(a6)";
 #define magDrawSpritesUP(vtx, nSprites, spriteSize) __magDrawSpritesUP(MaggieBase, (vtx), (nSprites), (spriteSize))
 
+void __magUploadVertexPositions(__reg("a6") struct Library *, __reg("d0") UWORD vBuffer, __reg("a0") struct vec3 * pos, __reg("d1") UWORD startVtx, __reg("d2") UWORD nVerts)="\tjsr\t-318(a6)";
+#define magUploadVertexPositions(vBuffer, pos, startVtx, nVerts) __magUploadVertexPositions(MaggieBase, (vBuffer), (pos), (startVtx), (nVerts))
+
+void __magUploadVertexNormals(__reg("a6") struct Library *, __reg("d0") UWORD vBuffer, __reg("a0") struct vec3 * norm, __reg("d1") UWORD startVtx, __reg("d2") UWORD nVerts)="\tjsr\t-324(a6)";
+#define magUploadVertexNormals(vBuffer, norm, startVtx, nVerts) __magUploadVertexNormals(MaggieBase, (vBuffer), (norm), (startVtx), (nVerts))
+
+void __magUploadVertexTexCoords2(__reg("a6") struct Library *, __reg("d0") UWORD vBuffer, __reg("a0") struct vec3 * uvs, __reg("d1") UWORD startVtx, __reg("d2") UWORD nVerts)="\tjsr\t-330(a6)";
+#define magUploadVertexTexCoords2(vBuffer, uvs, startVtx, nVerts) __magUploadVertexTexCoords2(MaggieBase, (vBuffer), (uvs), (startVtx), (nVerts))
+
+void __magUploadVertexTexCoords3(__reg("a6") struct Library *, __reg("d0") UWORD vBuffer, __reg("a0") struct vec2 * uvs, __reg("d1") UWORD startVtx, __reg("d2") UWORD nVerts)="\tjsr\t-336(a6)";
+#define magUploadVertexTexCoords3(vBuffer, uvs, startVtx, nVerts) __magUploadVertexTexCoords3(MaggieBase, (vBuffer), (uvs), (startVtx), (nVerts))
+
+void __magUploadVertexColours(__reg("a6") struct Library *, __reg("d0") UWORD vBuffer, __reg("a0") ULONG * colours, __reg("d1") UWORD startVtx, __reg("d2") UWORD nVerts)="\tjsr\t-342(a6)";
+#define magUploadVertexColours(vBuffer, colours, startVtx, nVerts) __magUploadVertexColours(MaggieBase, (vBuffer), (colours), (startVtx), (nVerts))
+
 #endif /*  _VBCCINLINE_MAGGIE_H  */

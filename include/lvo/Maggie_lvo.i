@@ -49,6 +49,11 @@ LIBRARIES_MAGGIE_LVO_I	SET	1
 		XDEF	_LVOmagScissor
 		XDEF	_LVOmagDrawSprites
 		XDEF	_LVOmagDrawSpritesUP
+		XDEF	_LVOmagUploadVertexPositions
+		XDEF	_LVOmagUploadVertexNormals
+		XDEF	_LVOmagUploadVertexTexCoords2
+		XDEF	_LVOmagUploadVertexTexCoords3
+		XDEF	_LVOmagUploadVertexColours
 
 _LVOmagSetScreenMemory      	EQU	-30
 _LVOmagSetTexture           	EQU	-36
@@ -98,5 +103,10 @@ _LVOmagClearDepth           	EQU	-294
 _LVOmagScissor              	EQU	-300
 _LVOmagDrawSprites          	EQU	-306
 _LVOmagDrawSpritesUP        	EQU	-312
+_LVOmagUploadVertexPositions	EQU	-318
+_LVOmagUploadVertexNormals  	EQU	-324
+_LVOmagUploadVertexTexCoords2	EQU	-330
+_LVOmagUploadVertexTexCoords3	EQU	-336
+_LVOmagUploadVertexColours  	EQU	-342
 
 		ENDC

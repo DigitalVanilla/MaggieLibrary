@@ -378,8 +378,33 @@ void DeCompressDXT1(UBYTE *dst, UBYTE *src, int width, int height, MaggieBase *l
 	}
 }
 
+/*****************************************************************************/
 
+static DXTBlock tmpBlocks[256*256];
 
+/*****************************************************************************/
+
+void SwizzleDXT1Texture(APTR data, int xres, int yres)
+{
+	xres /= 4;
+	yres /= 4;
+
+	DXTBlock *blocks = (DXTBlock *)data;
+
+	for(int i = 0; i < yres; ++i)
+	{
+		for(int j = 0; j < xres; ++j)
+		{
+			int swizzleX = ((j & ~1) << 1) + (j & 1);
+			int swizzleY = ((i >> 1) * (xres * 2)) + ((i & 1) << 1);
+			tmpBlocks[swizzleX | swizzleY] = blocks[i * xres + j];
+		}
+	}
+	for(int i = 0; i < xres * yres; ++i)
+	{
+		blocks[i] = tmpBlocks[i];
+	}
+}
 
 /*****************************************************************************/
 
