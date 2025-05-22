@@ -131,7 +131,7 @@
 	or.l	#$8000,d6
 
 	cmp.l	#16,d4
-	bge		.loopSpan16
+	bge.s		.loopSpan16
 .singlePixels:
 	tst.l	d4
 	beq.s	.noPixels
@@ -168,7 +168,7 @@
 	lea		EPos_Size(a2),a2
 
 	subq.l	#1,d5 ; ylen
-	bne		.vLoop
+	bne.w		.vLoop
 
 	movem.l	(a7)+,d2-d6/a2-a6
 .allDone:

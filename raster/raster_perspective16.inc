@@ -144,7 +144,6 @@
 	fmul	e7,e10
 	fmul	e7,e11
 
-
 	fmove.l	e10,Maggie_uDelta(a0)
 	fmove.l	e11,Maggie_vDelta(a0)
 	move.w	d4,Maggie_startLength(a0)
